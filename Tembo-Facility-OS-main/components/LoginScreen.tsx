@@ -89,7 +89,7 @@ export const LoginScreen: React.FC = () => {
             />
 
             <button
-              className={`w-full py-3 text-white font-semibold rounded-lg transition ${ROLE_STYLES[role]}`}
+              className={`w-full py-3 text-black font-semibold rounded-lg transition ${ROLE_STYLES[role]}`}
               onClick={async () => {
                 try {
                   if (role === UserRole.CLIENT && !registered) {
