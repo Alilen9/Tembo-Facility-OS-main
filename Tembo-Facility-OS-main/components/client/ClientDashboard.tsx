@@ -11,6 +11,7 @@ export const ClientDashboard: React.FC<{ onCreateClick?: () => void }> = ({ onCr
     const loadStats = async () => {
       try {
         const data = await clientService.getDashboardStats();
+        console.log("Loaded client stats", data);
         setStats(data);
       } catch (error) {
         console.error("Failed to load client stats", error);

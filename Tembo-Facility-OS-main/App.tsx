@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
-import { WorkOrderList } from './components/WorkOrderList';
+import { ClientRequests } from './components/client/ClientRequests';
 import { JobDetail } from './components/JobDetail';
 import { CreateRequestModal } from './components/CreateRequestModal';
 import { AdminDispatchConsole } from './components/AdminDispatchConsole';
@@ -14,15 +14,15 @@ import { LoginScreen } from './components/LoginScreen';
 import { AccessDenied } from './components/AccessDenied';
 import { AuthProvider, useAuth } from './components/AuthContext';
 // Added missing BillingStatus and HoldReason to imports
-import { Job, JobPriority, JobStatus, UserRole, BillingStatus, HoldReason } from './types';
 import { MOCK_JOBS } from './constants';
 import { Toaster, toast } from 'react-hot-toast';
 import { clientService } from './services/clientService';
+import { Job, JobPriority, JobStatus, UserRole } from './types';
 
 const AuthenticatedApp: React.FC = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'jobs' | 'admin-dispatch' | 'quality-control' | 'mobile-tech' | 'billing' | 'strategic-tower'>('dashboard');
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [dispatchJob, setDispatchJob] = useState<Job | null>(null);
   const [jobs, setJobs] = useState<Job[]>(MOCK_JOBS);
@@ -40,10 +40,11 @@ const AuthenticatedApp: React.FC = () => {
     }
   }, [user, activeTab]);
 
-  const selectedJob = jobs.find(j => j.id === selectedJobId) || null;
+  const selectedJobId = selectedJob?.id || null;
 
   const handleUpdateJob = (updatedJob: Job) => {
     setJobs(jobs.map(j => j.id === updatedJob.id ? updatedJob : j));
+    if (selectedJob?.id === updatedJob.id) setSelectedJob(updatedJob);
   };
 
   const handleAssignTech = (jobId: string, technicianId: string) => {
@@ -76,13 +77,14 @@ const AuthenticatedApp: React.FC = () => {
 
   const handleTrackCreatedRequest = (jobId: string) => {
     setActiveTab('jobs');
-    setSelectedJobId(jobId);
+    const job = jobs.find(j => j.id === jobId);
+    if (job) setSelectedJob(job);
     setIsCreateModalOpen(false);
   };
 
   const handleNavigate = (tab: any) => {
     setActiveTab(tab);
-    setSelectedJobId(null);
+    setSelectedJob(null);
   };
 
   // 1. Mobile Tech View (Exclusive)
@@ -122,9 +124,9 @@ const AuthenticatedApp: React.FC = () => {
         {activeTab === 'jobs' && (
           <div className="flex h-[calc(100vh-8rem)] gap-6">
             <div className={`flex-1 overflow-y-auto transition-all duration-300 ${selectedJobId ? 'lg:w-1/2' : 'w-full'}`}>
-              <WorkOrderList 
+              <ClientRequests 
                 selectedJobId={selectedJobId}
-                onSelectJob={(job) => setSelectedJobId(job.id)} 
+                onSelectJob={(job) => setSelectedJob(job)} 
               />
             </div>
             
@@ -132,7 +134,7 @@ const AuthenticatedApp: React.FC = () => {
               <div className="w-full lg:w-[450px] flex-shrink-0 animate-slide-in">
                 <JobDetail 
                   job={selectedJob} 
-                  onClose={() => setSelectedJobId(null)} 
+                  onClose={() => setSelectedJob(null)} 
                   onUpdateJob={handleUpdateJob}
                 />
               </div>

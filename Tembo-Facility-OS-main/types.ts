@@ -187,3 +187,14 @@ export interface Contract {
   startDate: string;
   renewalDate: string;
 }
+
+export type TimeRange = 'today' | 'yesterday' | 'this_week' | 'last_7_days' | 'this_month' | 'custom';
+
+export const INITIAL_SERVICE_TARGETS: ServiceTarget[] = [
+  { serviceType: 'Cleaning', daily: 45000, weekly: 250000, monthly: 1000000, historicalDailyAvg: 42000, allTimePeak: 68000 },
+  { serviceType: 'Pest Control', daily: 30000, weekly: 180000, monthly: 750000, historicalDailyAvg: 28000, allTimePeak: 45000 },
+  { serviceType: 'Handyman', daily: 60000, weekly: 350000, monthly: 1400000, historicalDailyAvg: 55000, allTimePeak: 92000 },
+  { serviceType: 'Appliance Repair', daily: 40000, weekly: 220000, monthly: 900000, historicalDailyAvg: 38000, allTimePeak: 55000 },
+  { serviceType: 'Construction', daily: 150000, weekly: 800000, monthly: 3500000, historicalDailyAvg: 120000, allTimePeak: 240000 },
+  { serviceType: 'Moving Services', daily: 50000, weekly: 300000, monthly: 1200000, historicalDailyAvg: 48000, allTimePeak: 750000 },
+];

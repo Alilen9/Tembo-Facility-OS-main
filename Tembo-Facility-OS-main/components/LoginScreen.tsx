@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Toaster, toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { BrainCircuit } from './Icons';
 import { useAuth } from './AuthContext';
 import { UserRole } from '../types';
