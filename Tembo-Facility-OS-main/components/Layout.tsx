@@ -64,6 +64,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans">
       {isAdmin && <GlobalTriageBar onOpen={() => setIsAlertsOpen(true)} />}
+      
 
       <div className="flex flex-1 overflow-hidden">
         <aside className="w-64 bg-tembo-900 border-r border-slate-800 flex flex-col flex-shrink-0 z-20 shadow-xl">

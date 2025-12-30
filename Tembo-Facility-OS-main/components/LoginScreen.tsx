@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { Toaster, toast } from 'react-hot-toast';
 import { BrainCircuit } from './Icons';
 import { useAuth } from './AuthContext';
 import { UserRole } from '../types';
+import { authService } from '../services/authService';
 
 const ROLE_STYLES = {
   CLIENT: 'bg-emerald-600 hover:bg-emerald-700',
@@ -17,9 +19,11 @@ export const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [registered, setRegistered] = useState(false);
+  const [company, setCompany] = useState('');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-6">
+      
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="text-center mb-8">
@@ -53,12 +57,20 @@ export const LoginScreen: React.FC = () => {
 
           <div className="space-y-4">
             {role === UserRole.CLIENT && !registered && (
-              <input
-                placeholder="Full Name"
-                className="w-full p-3 border rounded-lg"
-                value={name}
-                onChange={e => setName(e.target.value)}
-              />
+              <>
+                <input
+                  placeholder="Full Name"
+                  className="w-full p-3 border rounded-lg"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                />
+                <input
+                  placeholder="Company"
+                  className="w-full p-3 border rounded-lg"
+                  value={company}
+                  onChange={e => setCompany(e.target.value)}
+                />
+              </>
             )}
 
             <input
@@ -78,12 +90,24 @@ export const LoginScreen: React.FC = () => {
 
             <button
               className={`w-full py-3 text-white font-semibold rounded-lg transition ${ROLE_STYLES[role]}`}
-              onClick={() => {
-                if (role === UserRole.CLIENT && !registered) {
-                  setRegistered(true);
-                  alert('Registered successfully');
-                } else {
-                  login(role); // ✅ Login sets the user
+              onClick={async () => {
+                try {
+                  if (role === UserRole.CLIENT && !registered) {
+                    const data = await authService.register(name, email, password, role, company);
+                    if (data.token) {
+                      setRegistered(true);
+                      toast.success('Registered successfully');
+                    }
+                  } else {
+                    const data = await authService.login(email, password);
+                    if (data.token) {
+                      login(data.user, data.token);
+                    }
+                  }
+                } catch (error: any) {
+                  console.error(error);
+                  const message = error.response?.data?.message || 'Authentication failed';
+                  toast.error(message);
                 }
               }}
             >

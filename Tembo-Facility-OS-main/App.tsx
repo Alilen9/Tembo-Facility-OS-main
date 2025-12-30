@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from './components/AuthContext';
 // Added missing BillingStatus and HoldReason to imports
 import { Job, JobPriority, JobStatus, UserRole, BillingStatus, HoldReason } from './types';
 import { MOCK_JOBS } from './constants';
+import { Toaster } from 'react-hot-toast';
 
 const AuthenticatedApp: React.FC = () => {
   const { user, logout } = useAuth();
@@ -181,6 +182,13 @@ const Main: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
+      <Toaster position="top-right" toastOptions={{
+        style: {
+          background: '#7A9AC7', // bg-gray-800
+          color: '#F9FAFB', // text-gray-50
+          border: '1px solid #374151', // border-gray-700
+        },
+      }} />
       <Main />
     </AuthProvider>
   );
