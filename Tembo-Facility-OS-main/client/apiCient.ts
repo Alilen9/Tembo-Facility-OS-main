@@ -5,7 +5,7 @@ import axios from 'axios';
  * A single, configured axios instance for all API calls.
  */
 const apiClient = axios.create({ 
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api', 
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://tembo-care-backend.vercel.app/api', 
   headers: {
     'Content-Type': 'application/json',
   },

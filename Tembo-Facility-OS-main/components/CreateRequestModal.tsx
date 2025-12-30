@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
 import { X, ArrowRight, ArrowLeft, Zap, Droplets, Thermometer, Hammer, Shield, SprayCan, AlertCircle, Camera, Upload, CheckCircle2, Clock } from './Icons';
+import { JobPriority } from '../types';
 
 interface CreateRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTrack?: () => void;
+  onTrack?: (jobId: string) => void;
+  onSubmit: (data: { title: string; description: string; priority: JobPriority; category: string; location: string; preferredTime: string }) => Promise<string | null>;
 }
 
 const CATEGORIES = [
@@ -31,7 +33,7 @@ const TIME_SLOTS = [
   { id: 'evening', label: '04:00 PM - 06:00 PM', period: 'Evening' },
 ];
 
-export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose, onTrack }) => {
+export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose, onTrack, onSubmit }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     category: '',
@@ -41,10 +43,44 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
     availability: 'morning',
     files: [] as File[],
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdJobId, setCreatedJobId] = useState<string | null>(null);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 2 && (!formData.location || !formData.description)) return; 
-    setStep(step + 1);
+    
+    if (step === 4) {
+      setIsSubmitting(true);
+      try {
+        const priorityMap: Record<string, JobPriority> = {
+          'low': JobPriority.LOW,
+          'medium': JobPriority.MEDIUM,
+          'high': JobPriority.HIGH,
+          'critical': JobPriority.CRITICAL
+        };
+
+        const timeSlot = TIME_SLOTS.find(t => t.id === formData.availability);
+
+        const payload = {
+          title: `${CATEGORIES.find(c => c.id === formData.category)?.label || 'Service'} Request at ${formData.location}`,
+          description: formData.description,
+          priority: priorityMap[formData.urgency] || JobPriority.MEDIUM,
+          category: CATEGORIES.find(c => c.id === formData.category)?.label || 'General',
+          location: formData.location,
+          preferredTime: timeSlot ? timeSlot.label : ''
+        };
+
+        const jobId = await onSubmit(payload);
+        if (jobId) setCreatedJobId(jobId);
+        setStep(step + 1);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      setStep(step + 1);
+    }
   };
 
   const handleBack = () => setStep(step - 1);
@@ -52,11 +88,12 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
   const resetAndClose = () => {
     setStep(1);
     setFormData({ category: '', location: '', description: '', urgency: 'low', availability: 'morning', files: [] });
+    setCreatedJobId(null);
     onClose();
   };
 
   const handleTrackClick = () => {
-    if (onTrack) onTrack();
+    if (onTrack && createdJobId) onTrack(createdJobId);
     resetAndClose();
   };
 
@@ -322,7 +359,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
                   : 'bg-tembo-brand text-white hover:bg-blue-700 hover:shadow-lg active:scale-95'
                 }`}
              >
-               {step === 4 ? 'Confirm & Submit' : 'Next'}
+               {step === 4 ? (isSubmitting ? 'Submitting...' : 'Confirm & Submit') : 'Next'}
                {step !== 4 && <ArrowRight size={16} className="ml-2" />}
              </button>
            )}

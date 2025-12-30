@@ -16,7 +16,8 @@ import { AuthProvider, useAuth } from './components/AuthContext';
 // Added missing BillingStatus and HoldReason to imports
 import { Job, JobPriority, JobStatus, UserRole, BillingStatus, HoldReason } from './types';
 import { MOCK_JOBS } from './constants';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
+import { clientService } from './services/clientService';
 
 const AuthenticatedApp: React.FC = () => {
   const { user, logout } = useAuth();
@@ -61,25 +62,22 @@ const AuthenticatedApp: React.FC = () => {
     }
   };
 
-  const handleTrackNewRequest = () => {
-    // Fix: Added missing mandatory properties price, billingStatus, and holdReason to the new Job object to satisfy the Job interface
-    const newJob: Job = {
-      id: Math.floor(1000 + Math.random() * 9000).toString(),
-      customerId: user?.relatedCustomerId || 'c1',
-      title: 'New Service Request',
-      description: 'Reported issue via portal. Awaiting dispatch review.',
-      status: JobStatus.PENDING,
-      priority: JobPriority.MEDIUM,
-      dateCreated: new Date().toISOString(),
-      timeline: [{ status: 'Request Received', timestamp: new Date().toISOString(), isCompleted: true }],
-      price: 0,
-      billingStatus: BillingStatus.UNBILLED,
-      holdReason: HoldReason.NONE
-    };
-    
-    setJobs([newJob, ...jobs]);
+  const handleCreateRequest = async (data: { title: string; description: string; priority: JobPriority; category: string; location: string; preferredTime: string }) => {
+    try {
+      const newJob = await clientService.createJob(data);
+      setJobs([newJob, ...jobs]);
+      return newJob.id;
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to create request');
+      return null;
+    }
+  };
+
+  const handleTrackCreatedRequest = (jobId: string) => {
     setActiveTab('jobs');
-    setSelectedJobId(newJob.id);
+    setSelectedJobId(jobId);
+    setIsCreateModalOpen(false);
   };
 
   const handleNavigate = (tab: any) => {
@@ -161,7 +159,8 @@ const AuthenticatedApp: React.FC = () => {
       <CreateRequestModal 
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)} 
-        onTrack={handleTrackNewRequest}
+        onSubmit={handleCreateRequest}
+        onTrack={handleTrackCreatedRequest}
       />
 
       <DispatchModal 

@@ -113,6 +113,17 @@ export const LoginScreen: React.FC = () => {
             >
               {role === UserRole.CLIENT && !registered ? 'Create Account' : 'Sign In'}
             </button>
+
+            {role === UserRole.CLIENT && (
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => setRegistered(!registered)}
+                  className="text-sm text-slate-500 hover:text-blue-600 font-medium"
+                >
+                  {!registered ? 'Already have an account? Sign in' : 'Need an account? Create one'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
