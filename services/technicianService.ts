@@ -1,5 +1,5 @@
 import apiClient from '../client/apiCient';
-import { Job, JobStatus } from '../types';
+import { Job, JobStatus, Technician } from '../types';
 
 export const technicianService = {
   getMyJobs: async (): Promise<Job[]> => {
@@ -43,6 +43,21 @@ export const technicianService = {
         'Content-Type': 'multipart/form-data'
       }
     });
+    return response.data;
+  },
+
+  getJobsAwaitingAudit: async (): Promise<Job[]> => {
+    const response = await apiClient.get('/admin/audit-queue');
+    return response.data;
+  },
+
+  getAllTechnicians: async (): Promise<Technician[]> => {
+    const response = await apiClient.get('/admin/technicians');
+    return response.data;
+  },
+
+  verifyAudit: async (jobId: string, status: 'Passed' | 'Failed', notes?: string) => {
+    const response = await apiClient.put(`/admin/jobs/${jobId}/audit`, { status, notes });
     return response.data;
   }
   

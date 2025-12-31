@@ -8,7 +8,7 @@ import { AdminDispatchConsole } from './components/admin/AdminDispatchConsole';
 import { DispatchModal } from './components/admin/DispatchModal';
 import { MobileTechApp } from './components/mobile/MobileTechApp';
 import { BillingView } from './components/BillingView';
-import { QualityControlView } from './components/QualityControlView'; 
+import { QualityControlView } from './components/admin/QualityControlView'; 
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { LoginScreen } from './components/LoginScreen';
 import { AccessDenied } from './components/AccessDenied';

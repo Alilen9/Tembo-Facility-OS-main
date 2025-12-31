@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from 'react';
-import { Job, JobPriority, JobStatus } from '../types';
-import { MOCK_JOBS, MOCK_TECHNICIANS, MOCK_CUSTOMERS } from '../constants';
-import { 
-  CheckCircle2, X, AlertTriangle, Shield, Star, MapPin, 
-  Calendar, Camera, FileText, ArrowRight, RefreshCw, MessageSquare 
-} from './Icons';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
+import { Job, JobPriority, JobStatus, Technician } from '../../types';
+
+import { technicianService } from '../../services/technicianService';
+import { CheckCircle2, Star, Calendar, MapPin, Camera, FileText, MessageSquare, AlertTriangle, ArrowRight, RefreshCw } from '../Icons';
 
 // --- TYPES & HELPERS ---
 
@@ -15,73 +14,110 @@ const DEFECT_CATEGORIES = [
   { id: 'billing', label: 'Billing Discrepancy', color: 'bg-yellow-100 text-yellow-700' },
 ];
 
-const getTechStats = (techId?: string) => {
-  const tech = MOCK_TECHNICIANS.find(t => t.id === techId);
-  // Mock Stats
-  return {
-    ...tech,
-    auditPassRate: 92, // Mock 92% pass rate
-    jobsThisMonth: 24,
-  };
-};
-
-const getCustomer = (id: string) => MOCK_CUSTOMERS.find(c => c.id === id);
-
 // --- COMPONENT ---
 
 export const QualityControlView: React.FC = () => {
   const [filterMode, setFilterMode] = useState<'risk' | 'random' | 'all'>('risk');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isFlagging, setIsFlagging] = useState(false);
+  
+  const [allAuditJobs, setAllAuditJobs] = useState<Job[]>([]);
   const [auditQueue, setAuditQueue] = useState<Job[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Initialize Queue based on Filter
-  useMemo(() => {
-    let jobs = MOCK_JOBS.filter(j => j.status === JobStatus.COMPLETED && !j.auditStatus);
+  // 1. Fetch Data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [jobsData, techsData] = await Promise.all([
+          technicianService.getJobsAwaitingAudit(),
+          technicianService.getAllTechnicians()
+        ]);
+        setAllAuditJobs(jobsData);
+        setTechnicians(techsData);
+      } catch (error) {
+        console.error("Failed to fetch QC data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // 2. Filter Queue
+  useEffect(() => {
+    let jobs = [...allAuditJobs];
     
     if (filterMode === 'risk') {
       // Risk = Low Rating OR Critical Priority
       jobs = jobs.filter(j => (j.userRating && j.userRating < 4) || j.priority === JobPriority.CRITICAL);
     } else if (filterMode === 'random') {
-      // Random Sample (Mock: take every 2nd job)
+      // Random Sample (take every 2nd job)
       jobs = jobs.filter((_, i) => i % 2 === 0).slice(0, 5);
     }
     
-    // Fallback if empty for demo
-    if (jobs.length === 0) jobs = MOCK_JOBS.filter(j => j.status === JobStatus.COMPLETED).slice(0, 3);
-    
     setAuditQueue(jobs);
     if (jobs.length > 0 && !selectedJobId) setSelectedJobId(jobs[0].id);
-  }, [filterMode]);
+  }, [filterMode, allAuditJobs]);
 
   const selectedJob = auditQueue.find(j => j.id === selectedJobId) || auditQueue[0];
-  const techStats = getTechStats(selectedJob?.technicianId);
-  const customer = selectedJob ? getCustomer(selectedJob.customerId) : null;
+  
+  // Helper to get tech details from state
+  const techStats = React.useMemo(() => {
+    const tech = technicians.find(t => t.id === selectedJob?.technicianId);
+    return {
+      name: tech?.name || 'Unknown Technician',
+      avatarUrl: tech?.avatarUrl || 'https://i.pravatar.cc/150?u=tech',
+      auditPassRate: tech?.auditPassRate || 95, // Default if not in backend yet
+      jobsThisMonth: 12 // Placeholder or calculate from jobs list
+    };
+  }, [technicians, selectedJob]);
+
+  // Helper to get customer details from job
+  const customer = selectedJob ? {
+    name: (selectedJob as any).customerName || 'Unknown Customer',
+    address: selectedJob.location || 'No Address'
+  } : null;
 
   // Handlers
-  const handleVerify = () => {
-    // Ideally calls API to update status
-    const nextQueue = auditQueue.filter(j => j.id !== selectedJob?.id);
-    setAuditQueue(nextQueue);
-    if (nextQueue.length > 0) setSelectedJobId(nextQueue[0].id);
-    else setSelectedJobId(null);
+  const handleVerify = async (status: 'Passed' | 'Failed' = 'Passed', notes?: string) => {
+    if (!selectedJob) return;
+    try {
+      await technicianService.verifyAudit(selectedJob.id, status, notes);
+      toast.success(`Audit ${status}`);
+      
+      const nextQueue = auditQueue.filter(j => j.id !== selectedJob?.id);
+      setAuditQueue(nextQueue);
+      if (nextQueue.length > 0) setSelectedJobId(nextQueue[0].id);
+      else setSelectedJobId(null);
+    } catch (error) {
+      console.error("Failed to update audit status", error);
+      toast.error("Failed to submit audit");
+    }
   };
 
   const handleFlagDefect = (category: string) => {
-    // In real app: Create defect record
-    alert(`Defect '${category}' logged for Job #${selectedJob?.id}. Notification sent to technician.`);
     setIsFlagging(false);
-    handleVerify(); // Move to next
+    handleVerify('Failed', `Defect flagged: ${category}`);
   };
 
-  if (!selectedJob) {
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-slate-50">
+        <RefreshCw className="animate-spin text-slate-400" size={32} />
+      </div>
+    );
+  }
+
+  if (!isLoading && !selectedJob) {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-slate-50 text-center">
         <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mb-6">
           <CheckCircle2 size={40} />
         </div>
         <h2 className="text-2xl font-bold text-slate-900">Queue Cleared</h2>
-        <p className="text-slate-500 mt-2">All jobs in this category have been audited.</p>
+        <p className="text-slate-500 mt-2">No jobs pending audit in this category.</p>
         <button 
           onClick={() => setFilterMode('all')}
           className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors"
@@ -98,7 +134,7 @@ export const QualityControlView: React.FC = () => {
       {/* 1. LEFT RAIL: The Queue */}
       <div className="w-80 bg-white border-r border-slate-200 flex flex-col z-10 shadow-sm">
         <div className="p-4 border-b border-slate-100">
-           <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3">Audit Queue</h2>
+           <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3">Audit Queue ({allAuditJobs.length})</h2>
            <div className="flex bg-slate-100 p-1 rounded-lg">
               <button 
                 onClick={() => setFilterMode('risk')}
@@ -133,7 +169,7 @@ export const QualityControlView: React.FC = () => {
                   )}
                 </div>
                 <h4 className="text-sm font-bold text-slate-900 truncate">{job.title}</h4>
-                <p className="text-xs text-slate-500 mt-1 truncate">{getCustomer(job.customerId)?.name}</p>
+                <p className="text-xs text-slate-500 mt-1 truncate">{(job as any).customerName}</p>
              </div>
            ))}
         </div>
@@ -293,7 +329,7 @@ export const QualityControlView: React.FC = () => {
 
                  {/* Verify Button */}
                  <button 
-                   onClick={handleVerify}
+                   onClick={() => handleVerify('Passed')}
                    className="px-8 py-3 rounded-lg bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200 transition-all flex items-center gap-2 active:scale-95"
                  >
                    <CheckCircle2 size={18} />

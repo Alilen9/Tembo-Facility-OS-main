@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { UserRole } from '../types';
+import { technicianService } from '../services/technicianService';
 // Added ShieldCheck to imports to fix error on line 135
 import { LayoutDashboard, ClipboardList, Users, Settings, Bell, Search, BrainCircuit, Activity, Navigation, LogOut, CreditCard, Box, Shield, CheckCircle2, ShieldAlert, Layers, ShieldCheck } from './Icons';
 import { AlertSystem, GlobalTriageBar, GlobalAlert } from './AlertSystem';
@@ -45,6 +46,7 @@ const SidebarItem: React.FC<{
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate }) => {
   const { user, logout } = useAuth();
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [unassignedJobCount, setUnassignedJobCount] = useState(0);
   
   if (!user) return null;
 
@@ -60,6 +62,19 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate 
     }
     setIsAlertsOpen(false);
   };
+
+  useEffect(() => {
+    const fetchUnassignedJobCount = async () => {
+      try {
+        const data = await technicianService.getAvailableJobs();
+        setUnassignedJobCount(data.length);
+      } catch (error) {
+        console.error("Failed to fetch unassigned jobs count", error);
+      }
+    };
+
+    if (isAdmin) fetchUnassignedJobCount();
+  }, [isAdmin]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans">
@@ -131,7 +146,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate 
                   label="Dispatch Console" 
                   active={activeTab === 'admin-dispatch'} 
                   onClick={() => onNavigate('admin-dispatch')}
-                  badge={2} 
+                  badge={unassignedJobCount} 
                 />
                 <SidebarItem 
                   icon={<ShieldCheck size={18} />} 
