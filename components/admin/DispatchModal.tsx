@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { Job, JobPriority, Technician } from '../types';
-import { MOCK_TECHNICIANS, MOCK_CUSTOMERS } from '../constants';
-import { X, Search, CheckCircle2, AlertCircle, Clock, MapPin, UserCheck, Star, Shield, AlertTriangle, Navigation, Activity } from './Icons';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Job, JobPriority, Technician } from '../../types';
+import { adminService } from '../../services/adminService';
+import { X, Search, CheckCircle2, AlertCircle, Clock, MapPin, UserCheck, Star, Shield, AlertTriangle, Navigation, Activity } from '../Icons';
+import { toast } from 'react-hot-toast';
 
 interface DispatchModalProps {
   job: Job | null;
@@ -11,9 +12,10 @@ interface DispatchModalProps {
 }
 
 // Mock Helper for "Live" Telemetry (Distance, Workload)
-const getLiveTelemetry = (techId: string) => {
+const getLiveTelemetry = (techId: string | number) => {
   // Deterministic mock based on ID for consistent demo UI
-  const seed = techId.charCodeAt(0) + techId.charCodeAt(1);
+  const idStr = String(techId);
+  const seed = idStr.charCodeAt(0) + (idStr.length > 1 ? idStr.charCodeAt(1) : 0);
   const distance = (seed % 15) / 2 + 0.5; // 0.5 to 8.0 miles
   const currentLoad = seed % 5; // 0 to 4 jobs
   const maxLoad = 5;
@@ -28,14 +30,40 @@ const getLiveTelemetry = (techId: string) => {
 export const DispatchModal: React.FC<DispatchModalProps> = ({ job, isOpen, onClose, onAssign }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
+  const [technicians, setTechnicians] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
 
-  const customer = job ? MOCK_CUSTOMERS.find(c => c.id === job.customerId) : null;
+  useEffect(() => {
+    if (isOpen) {
+      const fetchTechs = async () => {
+        setLoading(true);
+        try {
+          const data = await adminService.getTechnicians();
+          console.log("Fetched technicians:", data);
+          // Polyfill missing UI data (skills, avatar) if backend doesn't provide them yet
+          const enhancedData = data.map((t: any) => ({
+            ...t,
+            id: String(t.id),
+            avatarUrl: t.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=random`,
+            skills: t.skills || ['HVAC', 'Electrical', 'Plumbing', 'Security', 'General'].sort(() => 0.5 - Math.random()).slice(0, 3)
+          }));
+          setTechnicians(enhancedData);
+        } catch (error) {
+          console.error("Failed to load technicians", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchTechs();
+    }
+  }, [isOpen]);
 
   // Smart Matching Logic
   const processedTechs = useMemo(() => {
-    if (!job) return [];
+    if (!job || technicians.length === 0) return [];
     
-    return MOCK_TECHNICIANS.map(tech => {
+    return technicians.map(tech => {
       const telemetry = getLiveTelemetry(tech.id);
       
       // 1. Skill Match
@@ -73,18 +101,27 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ job, isOpen, onClo
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       t.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-  }, [job, searchQuery]);
+  }, [job, searchQuery, technicians]);
 
   if (!isOpen || !job) return null;
 
   const selectedTech = processedTechs.find(t => t.id === selectedTechId);
 
-  const handleConfirm = () => {
-    if (selectedTechId) {
-      onAssign(job.id, selectedTechId);
-      onClose();
-      setSelectedTechId(null);
-      setSearchQuery('');
+  const handleConfirm = async () => {
+    if (selectedTechId && job) {
+      setIsAssigning(true);
+      try {
+        await adminService.assignTechnician(String(job.id), selectedTechId);
+        toast.success(`Technician assigned to Job #${job.id}`);
+        onAssign(String(job.id), selectedTechId);
+        onClose();
+        setSelectedTechId(null);
+        setSearchQuery('');
+      } catch (error) {
+        toast.error("Failed to assign technician");
+      } finally {
+        setIsAssigning(false);
+      }
     }
   };
 
@@ -140,7 +177,7 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ job, isOpen, onClo
                <div className="absolute inset-0 flex items-center justify-center opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-400 to-transparent"></div>
                <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <MapPin size={24} className="text-blue-600 mb-1 drop-shadow-md" />
-                  <p className="text-xs font-bold text-slate-700 bg-white/90 px-2 py-1 rounded shadow-sm">{customer?.address.split(',')[0]}</p>
+                  <p className="text-xs font-bold text-slate-700 bg-white/90 px-2 py-1 rounded shadow-sm">{job.location || 'Site Location'}</p>
                </div>
              </div>
 
@@ -183,6 +220,10 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ job, isOpen, onClo
 
           {/* List Area */}
           <div className="flex-1 overflow-y-auto p-6 space-y-3">
+            {loading && (
+              <div className="text-center py-8 text-slate-400 animate-pulse">Loading technicians...</div>
+            )}
+
             <div className="flex items-center justify-between px-2 mb-2">
                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Recommended Personnel ({processedTechs.length})</h3>
                <span className="text-xs text-slate-400">Sorted by Match Score</span>
@@ -320,15 +361,17 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ job, isOpen, onClo
                  
                  <button 
                    onClick={handleConfirm}
-                   disabled={!selectedTechId}
+                   disabled={!selectedTechId || isAssigning}
                    className={`px-8 py-2.5 text-sm font-bold text-white rounded-lg shadow-md transition-all flex items-center gap-2 ${
-                     !selectedTechId ? 'bg-slate-300 cursor-not-allowed' :
+                     !selectedTechId || isAssigning ? 'bg-slate-300 cursor-not-allowed' :
                      selectedTech?.hasConflict 
                        ? 'bg-amber-600 hover:bg-amber-700 ring-2 ring-amber-200 animate-pulse' // Warning State
                        : 'bg-tembo-brand hover:bg-blue-700 hover:shadow-lg' // Normal State
                    }`}
                  >
-                   {selectedTech?.hasConflict ? (
+                   {isAssigning ? (
+                     <span>Assigning...</span>
+                   ) : selectedTech?.hasConflict ? (
                      <>
                        <AlertTriangle size={18} />
                        Override & Assign

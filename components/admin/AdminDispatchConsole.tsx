@@ -1,8 +1,8 @@
-
-import React, { useState, useMemo } from 'react';
-import { Job, JobPriority, JobStatus } from '../types';
-import { MOCK_JOBS, MOCK_TECHNICIANS, MOCK_CUSTOMERS } from '../constants';
-import { AlertCircle, Clock, CheckCircle2, Search, Users, MoreHorizontal, AlertTriangle, Zap, Thermometer, Droplets, Hammer, Shield, SprayCan, ArrowRight, UserCheck, Bell, MapPin, Camera, MessageSquare, Activity, List, ChevronRight } from './Icons';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Job, JobPriority, JobStatus, User } from '../../types';
+import { adminService } from '../../services/adminService';
+import { toast } from 'react-hot-toast';
+import { Clock, Search, MoreHorizontal, AlertTriangle, Zap, Thermometer, Droplets, Hammer, Shield, SprayCan, ArrowRight, UserCheck, Bell, MapPin, Camera, MessageSquare, Activity, List, ChevronRight } from '../Icons';
 
 const getCategoryIcon = (category?: string) => {
   switch (category?.toLowerCase()) {
@@ -53,9 +53,45 @@ export const AdminDispatchConsole: React.FC<{
 }> = ({ onDispatchClick, onAssignTech }) => {
   const [viewMode, setViewMode] = useState<'queue' | 'live'>('queue');
   const [searchQuery, setSearchQuery] = useState('');
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [technicians, setTechnicians] = useState<(User & { status: string })[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      const [jobsData, techsData] = await Promise.all([
+        adminService.getDispatchJobs(),
+        adminService.getTechnicians()
+      ]);
+      console.log("Fetched dispatch data", { jobsData, techsData });
+      setJobs(jobsData);
+      setTechnicians(techsData);
+    } catch (error) {
+      console.error("Failed to fetch dispatch data", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 15000); // Poll every 15s
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleAssign = async (jobId: string, techId: string) => {
+    try {
+      await adminService.assignTechnician(jobId, techId);
+      toast.success("Technician assigned");
+      fetchData();
+      if (onAssignTech) onAssignTech(jobId, techId);
+    } catch (error) {
+      toast.error("Assignment failed");
+    }
+  };
 
   const queueData = useMemo(() => {
-    let data = [...MOCK_JOBS];
+    let data = [...jobs];
     data.sort((a, b) => {
       const pWeight = { [JobPriority.CRITICAL]: 10, [JobPriority.HIGH]: 5, [JobPriority.MEDIUM]: 2, [JobPriority.LOW]: 1 };
       const weightA = pWeight[a.priority] + (a.technicianId ? 0 : 20); 
@@ -63,9 +99,11 @@ export const AdminDispatchConsole: React.FC<{
       return weightB - weightA;
     });
     return data.filter(job => job.title.toLowerCase().includes(searchQuery.toLowerCase()) || job.id.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [searchQuery]);
+  }, [jobs, searchQuery]);
 
-  const activeJobs = MOCK_JOBS.filter(j => j.status === JobStatus.IN_PROGRESS);
+  if (loading && jobs.length === 0) {
+    return <div className="flex items-center justify-center h-full text-slate-400">Loading dispatch console...</div>;
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] -m-6 bg-slate-50">
@@ -106,23 +144,25 @@ export const AdminDispatchConsole: React.FC<{
                         <div className="p-2 bg-slate-100 rounded text-slate-500">{getCategoryIcon(job.category)}</div>
                         <div>
                           <p className="text-sm font-bold text-slate-900">{job.title}</p>
-                          <p className="text-xs text-slate-400">#{job.id} • {MOCK_CUSTOMERS.find(c => c.id === job.customerId)?.name}</p>
+                          <p className="text-xs text-slate-400">#{job.id} • {(job as any).customerName || 'Client'}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       {job.technicianId ? (
                         <div className="flex items-center gap-2">
-                           <img src={MOCK_TECHNICIANS.find(t => t.id === job.technicianId)?.avatarUrl} className="w-6 h-6 rounded-full" />
-                           <span className="text-xs font-bold text-slate-700">{MOCK_TECHNICIANS.find(t => t.id === job.technicianId)?.name}</span>
+                           <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-700">
+                              {technicians.find(t => t.id === job.technicianId)?.name.charAt(0)}
+                           </div>
+                           <span className="text-xs font-bold text-slate-700">{technicians.find(t => t.id === job.technicianId)?.name}</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
                            <div className="text-[9px] font-bold text-slate-400 uppercase mr-2">Top Match:</div>
-                           {MOCK_TECHNICIANS.slice(0, 3).map(tech => (
+                           {technicians.filter(t => t.status === 'Available').slice(0, 3).map(tech => (
                              <button 
                                 key={tech.id}
-                                onClick={() => onAssignTech?.(job.id, tech.id)}
+                                onClick={() => handleAssign(job.id, tech.id)}
                                 title={`One-Click Assign to ${tech.name}`}
                                 className="group/chip relative px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm"
                              >
@@ -147,9 +187,9 @@ export const AdminDispatchConsole: React.FC<{
 
         {viewMode === 'live' && (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-             {MOCK_JOBS.map(job => {
+             {jobs.map(job => {
                const isAtRisk = job.priority === JobPriority.CRITICAL || (job.slaDeadline && new Date(job.slaDeadline) < new Date());
-               const tech = MOCK_TECHNICIANS.find(t => t.id === job.technicianId);
+               const tech = technicians.find(t => t.id === job.technicianId);
                
                if (!isAtRisk) {
                  return (
@@ -180,7 +220,9 @@ export const AdminDispatchConsole: React.FC<{
                     {tech && (
                       <div className="flex items-center justify-between">
                          <div className="flex items-center gap-2">
-                            <img src={tech.avatarUrl} className="w-6 h-6 rounded-full" />
+                            <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                              {tech.name.charAt(0)}
+                            </div>
                             <span className="text-[10px] font-bold text-slate-700">{tech.name}</span>
                          </div>
                          <div className="text-[10px] font-mono text-slate-400">ETA: 12m</div>

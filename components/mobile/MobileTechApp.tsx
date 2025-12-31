@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Job, JobStatus, JobPriority } from '../../types';
-import { MOCK_JOBS, MOCK_CUSTOMERS } from '../../constants';
 import { 
-  LogOut, MapPin, Clock, ArrowRight, Camera, CheckCircle2, 
-  AlertTriangle, Navigation, Phone, Wrench, Shield, AlertCircle, X, ChevronLeft, Star 
+  LogOut, MapPin, Clock, Camera, CheckCircle2, 
+  AlertTriangle, X, ChevronLeft, Star, RefreshCw
 } from '../Icons';
+import { toast } from 'react-hot-toast';
+import { technicianService } from '@/services/technicianService';
 
 type FlowState = 'LIST' | 'DETAILS' | 'CHECKING_IN' | 'BEFORE_PHOTOS' | 'WORK_EXECUTION' | 'AFTER_PHOTOS' | 'COMPLETION' | 'LOCKED';
 
@@ -18,6 +19,7 @@ const Header: React.FC<{
   title: string; 
   leftAction?: { icon: React.ReactNode; onClick: () => void };
   rightAction?: React.ReactNode;
+  // Added Image import here
 }> = ({ title, leftAction, rightAction }) => (
   <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between shadow-md shrink-0 sticky top-0 z-50">
     <div className="flex items-center gap-3">
@@ -57,10 +59,7 @@ const LargeButton: React.FC<{
 // --- SCREENS ---
 
 // 2.1 Screen 1: Today’s Jobs
-const JobsListScreen: React.FC<{ onSelect: (job: Job) => void; onLogout: () => void }> = ({ onSelect, onLogout }) => {
-  // Filter for demo: Show pending/scheduled jobs for "Today"
-  const myJobs = MOCK_JOBS.filter(j => j.status !== JobStatus.COMPLETED && j.status !== JobStatus.CANCELLED);
-
+const JobsListScreen: React.FC<{ jobs: Job[]; onSelect: (job: Job) => void; onLogout: () => void }> = ({ jobs, onSelect, onLogout }) => {
   return (
     <div className="flex flex-col h-full bg-slate-100">
       <div className="bg-slate-900 px-6 pt-10 pb-6 rounded-b-3xl shadow-lg z-10">
@@ -74,9 +73,9 @@ const JobsListScreen: React.FC<{ onSelect: (job: Job) => void; onLogout: () => v
         <p className="text-slate-300 text-sm">{new Date().toLocaleDateString(undefined, {weekday: 'long', month: 'long', day: 'numeric'})}</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 -mt-4">
-        {myJobs.map(job => {
-           const customer = MOCK_CUSTOMERS.find(c => c.id === job.customerId);
+      <div className="flex-1 overflow-y-auto p-4 -mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {jobs.map(job => {
            const isUrgent = job.priority === JobPriority.CRITICAL || job.priority === JobPriority.HIGH;
            return (
              <div key={job.id} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200" onClick={() => {}}>
@@ -86,17 +85,17 @@ const JobsListScreen: React.FC<{ onSelect: (job: Job) => void; onLogout: () => v
                   </span>
                   <span className="text-xs font-mono text-slate-400">#{job.id}</span>
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-1 leading-tight">{customer?.name}</h3>
+                <h3 className="text-lg font-bold text-slate-900 mb-1 leading-tight">{(job as any).customerName || 'Customer'}</h3>
                 <p className="text-sm text-slate-600 mb-4">{job.title}</p>
                 
                 <div className="flex items-center gap-4 text-xs text-slate-500 font-medium mb-4">
                   <div className="flex items-center gap-1">
                     <Clock size={14} className="text-slate-400" />
-                    <span>09:00 - 11:00</span>
+                    <span>{job.preferredTime || 'Anytime'}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <MapPin size={14} className="text-slate-400" />
-                    <span className="truncate max-w-[120px]">{customer?.address.split(',')[0]}</span>
+                    <span className="truncate max-w-[120px]">{job.location || 'On Site'}</span>
                   </div>
                 </div>
                 
@@ -104,6 +103,10 @@ const JobsListScreen: React.FC<{ onSelect: (job: Job) => void; onLogout: () => v
              </div>
            );
         })}
+        {jobs.length === 0 && (
+          <div className="text-center p-8 text-slate-500 col-span-full">No active jobs assigned.</div>
+        )}
+        </div>
         <div className="h-10"></div>
       </div>
     </div>
@@ -112,7 +115,6 @@ const JobsListScreen: React.FC<{ onSelect: (job: Job) => void; onLogout: () => v
 
 // 2.2 Screen 2: Job Details (Pre-CheckIn)
 const JobDetailsScreen: React.FC<{ job: Job; onCheckIn: () => void; onBack: () => void }> = ({ job, onCheckIn, onBack }) => {
-  const customer = MOCK_CUSTOMERS.find(c => c.id === job.customerId);
   return (
     <div className="flex flex-col h-full bg-slate-50">
       <Header 
@@ -157,32 +159,65 @@ const JobDetailsScreen: React.FC<{ job: Job; onCheckIn: () => void; onBack: () =
 };
 
 // 2.3 Screen 3: Check-In Flow (Simulated)
-const CheckInScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const [step, setStep] = useState<'locating' | 'verified'>('locating');
+const CheckInScreen: React.FC<{ onComplete: (coords: {lat: number, lng: number}) => void }> = ({ onComplete }) => {
+  const [step, setStep] = useState<'locating' | 'verified' | 'error'>('locating');
+  const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setStep('verified'), 2000);
-    return () => clearTimeout(timer);
+    if (!navigator.geolocation) {
+      setStep('error');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setStep('verified');
+      },
+      (error) => {
+        console.error("Location error:", error);
+        setStep('error');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
   }, []);
 
   return (
     <div className="flex flex-col h-full bg-slate-900 text-white items-center justify-center p-8 text-center">
-      {step === 'locating' ? (
+      {step === 'locating' && (
         <div className="animate-pulse flex flex-col items-center">
           <div className="w-20 h-20 rounded-full border-4 border-blue-500 mb-6 flex items-center justify-center">
              <MapPin size={40} className="text-blue-500" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">Verifying Location...</h2>
-          <p className="text-slate-400">Please stand still for GPS lock.</p>
+          <h2 className="text-2xl font-bold mb-2">Acquiring GPS Lock...</h2>
+          <p className="text-slate-400">Verifying site location match.</p>
         </div>
-      ) : (
+      )}
+      
+      {step === 'verified' && (
         <div className="flex flex-col items-center animate-slide-in w-full">
            <div className="w-20 h-20 rounded-full bg-emerald-500 mb-6 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.5)]">
              <CheckCircle2 size={40} className="text-white" />
           </div>
           <h2 className="text-2xl font-bold mb-2">You are Checked In</h2>
           <p className="text-slate-400 mb-8">Timestamp: {new Date().toLocaleTimeString()}</p>
-          <LargeButton label="Proceed to Work" onClick={onComplete} variant="primary" />
+          <p className="text-slate-500 text-xs mb-8 font-mono">GPS: {coords?.lat.toFixed(5)}, {coords?.lng.toFixed(5)}</p>
+          <LargeButton label="Proceed to Work" onClick={() => coords && onComplete(coords)} variant="primary" />
+        </div>
+      )}
+
+      {step === 'error' && (
+        <div className="flex flex-col items-center animate-slide-in w-full">
+           <div className="w-20 h-20 rounded-full bg-red-500 mb-6 flex items-center justify-center">
+             <AlertTriangle size={40} className="text-white" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Location Failed</h2>
+          <p className="text-slate-400 mb-8">Unable to verify GPS location. Please ensure location services are enabled.</p>
+          <LargeButton label="Retry" onClick={() => window.location.reload()} variant="secondary" />
+          <button onClick={() => onComplete({lat: 0, lng: 0})} className="mt-6 text-slate-500 text-sm underline">Bypass (Emergency Only)</button>
         </div>
       )}
     </div>
@@ -190,46 +225,188 @@ const CheckInScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
 };
 
 // 2.4 & 2.5 Screen 4/5: Photo Evidence (Reusable)
-const PhotoEvidenceScreen: React.FC<{ type: 'Before' | 'After'; onNext: () => void }> = ({ type, onNext }) => {
-  const [hasPhoto, setHasPhoto] = useState(false);
+const PhotoEvidenceScreen: React.FC<{ type: 'Before' | 'After'; onNext: (file?: File) => Promise<void> | void }> = ({ type, onNext }) => {
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoSource, setPhotoSource] = useState<'camera' | 'gallery' | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const galleryInputRef = React.useRef<HTMLInputElement>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+      setPhotoSource('gallery');
+    }
+  };
+
+  const clearPhoto = () => {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(null);
+    setPhotoFile(null);
+    setPhotoSource(null);
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
+  };
+
+  // Cleanup object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
+
+  // Camera Stream Handling
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    if (isCameraOpen) {
+      (async () => {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (err) {
+          console.error(err);
+          toast.error("Unable to access camera");
+          setIsCameraOpen(false);
+        }
+      })();
+    }
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isCameraOpen, facingMode]);
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
+            setPhotoFile(file);
+            setPhotoPreview(URL.createObjectURL(file));
+            setPhotoSource('camera');
+            setIsCameraOpen(false);
+          }
+        }, 'image/jpeg', 0.8);
+      }
+    }
+  };
+
+  const toggleCamera = () => {
+    setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
+  };
+
+  const handleProceed = async () => {
+    if (isUploading) return;
+    setIsUploading(true);
+    try {
+      await onNext(photoFile || undefined);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  if (isCameraOpen) {
+    return (
+      <div className="fixed inset-0 bg-black z-[60] flex flex-col items-center justify-center">
+        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+        <button 
+          onClick={() => setIsCameraOpen(false)}
+          className="absolute top-6 right-6 text-white bg-black/50 p-2 rounded-full"
+        >
+          <X size={32} />
+        </button>
+        <button 
+          onClick={toggleCamera}
+          className="absolute top-6 left-6 text-white bg-black/50 p-2 rounded-full"
+        >
+          <RefreshCw size={32} />
+        </button>
+        <div className="absolute bottom-10 w-full flex justify-center">
+           <button 
+             onClick={capturePhoto}
+             className="w-20 h-20 bg-white rounded-full border-4 border-slate-300 shadow-lg active:scale-95 transition-transform"
+           />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-slate-50">
       <Header title={`${type} Photos`} />
       
+      {/* Hidden Inputs */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        ref={galleryInputRef} 
+        className="hidden" 
+        onChange={handleFileSelect}
+      />
+
       <div className="flex-1 p-6 flex flex-col items-center justify-center">
          <div className="mb-8 text-center">
             <h2 className="text-xl font-bold text-slate-900 mb-2">{type} work evidence required</h2>
-            <p className="text-slate-500">You must upload a clear photo to proceed.</p>
+            <p className="text-slate-500">Choose a method to upload photo.</p>
          </div>
 
-         <button 
-           onClick={() => setHasPhoto(true)}
-           className={`w-64 h-64 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${
-             hasPhoto ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300 bg-white hover:bg-slate-50'
-           }`}
-         >
-           {hasPhoto ? (
-             <>
-               <img src="https://images.unsplash.com/photo-1581092921461-eab62e97a780?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover rounded-2xl" />
-               <div className="absolute bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">Photo Added</div>
-             </>
-           ) : (
-             <>
-               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                 <Camera size={32} />
+         {photoPreview ? (
+            <div className="relative w-64 h-64 rounded-2xl border-2 border-emerald-500 bg-emerald-50 flex flex-col items-center justify-center overflow-hidden shadow-lg">
+               <img src={photoPreview} className="w-full h-full object-cover" alt="Evidence" />
+               <div className="absolute bottom-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1">
+                 <CheckCircle2 size={12} /> Photo Added ({photoSource})
                </div>
-               <span className="text-slate-600 font-bold">Tap to Capture</span>
-             </>
-           )}
-         </button>
+               <button 
+                 onClick={clearPhoto}
+                 className="absolute top-2 right-2 bg-black/50 text-white p-1 rounded-full hover:bg-black/70 transition-colors"
+               >
+                 <X size={16} />
+               </button>
+            </div>
+         ) : (
+           <div className="w-full max-w-xs space-y-4">
+             <button 
+               onClick={() => setIsCameraOpen(true)}
+               className="w-full py-6 rounded-xl border-2 border-dashed border-slate-300 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex flex-col items-center gap-2 group"
+             >
+               <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                 <Camera size={24} />
+               </div>
+               <span className="font-bold text-slate-700">Take Photo</span>
+             </button>
+             <button 
+               onClick={() => galleryInputRef.current?.click()}
+               className="w-full py-6 rounded-xl border-2 border-dashed border-slate-300 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex flex-col items-center gap-2 group"
+             >
+               <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                 <Camera size={24} />
+               </div>
+               <span className="font-bold text-slate-700">Upload from Gallery</span>
+             </button>
+           </div>
+         )}
       </div>
 
       <div className="p-5 bg-white border-t border-slate-200">
         <LargeButton 
-          label={type === 'Before' ? "Start Work" : "Proceed to Completion"} 
-          onClick={onNext} 
-          disabled={!hasPhoto} 
+          label={isUploading ? "Uploading..." : (type === 'Before' ? "Start Work" : "Proceed to Completion")} 
+          onClick={handleProceed} 
+          disabled={!photoPreview || isUploading} 
+          icon={isUploading ? <RefreshCw className="animate-spin" size={20} /> : undefined}
         />
       </div>
     </div>
@@ -271,8 +448,19 @@ const WorkExecutionScreen: React.FC<{ job: Job; onComplete: () => void }> = ({ j
 };
 
 // 2.5 Screen 6: Completion
-const CompletionScreen: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
+const CompletionScreen: React.FC<{ onSubmit: () => Promise<void> | void }> = ({ onSubmit }) => {
   const [techRating, setTechRating] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmitClick = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onSubmit();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-slate-50">
@@ -317,7 +505,13 @@ const CompletionScreen: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
       </div>
 
       <div className="p-5 bg-white border-t border-slate-200 sticky bottom-0 z-20">
-         <LargeButton label="Submit & Lock Job" onClick={onSubmit} variant="primary" />
+         <LargeButton 
+           label={isSubmitting ? "Submitting..." : "Submit & Lock Job"} 
+           onClick={handleSubmitClick} 
+           variant="primary" 
+           disabled={isSubmitting}
+           icon={isSubmitting ? <RefreshCw className="animate-spin" size={20} /> : undefined}
+         />
       </div>
     </div>
   );
@@ -365,11 +559,43 @@ export const MobileTechApp: React.FC<MobileTechAppProps> = ({ onLogout }) => {
   const [state, setState] = useState<FlowState>('LIST');
   const [activeJob, setActiveJob] = useState<Job | null>(null);
   const [showIncident, setShowIncident] = useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const data = await technicianService.getMyJobs();
+        console.log("Fetched jobs:", data);
+        setJobs(data);
+      } catch (error) {
+        console.error("Failed to fetch jobs", error);
+      }
+    };
+    fetchJobs();
+  }, [state]); // Reload when state changes (e.g. after completion)
 
   // Flow Handlers
   const handleSelectJob = (job: Job) => {
     setActiveJob(job);
-    setState('DETAILS');
+    
+    // Resume workflow based on job status and timeline
+    if (job.status === JobStatus.IN_PROGRESS) {
+      const lastEvent = job.timeline && job.timeline.length > 0 
+        ? job.timeline[job.timeline.length - 1] 
+        : null;
+
+      if (lastEvent?.status === 'Work Started') {
+        setState('WORK_EXECUTION');
+      } else if (lastEvent?.status === 'Technician On Site') {
+        setState('BEFORE_PHOTOS');
+      } else {
+        setState('CHECKING_IN');
+      }
+    } else if (job.status === JobStatus.COMPLETED) {
+      setState('LOCKED');
+    } else {
+      setState('DETAILS');
+    }
   };
 
   const handleBackToList = () => {
@@ -378,23 +604,82 @@ export const MobileTechApp: React.FC<MobileTechAppProps> = ({ onLogout }) => {
   };
 
   const handleCheckIn = () => setState('CHECKING_IN');
-  const handleCheckInComplete = () => setState('BEFORE_PHOTOS');
-  const handleBeforePhotosComplete = () => setState('WORK_EXECUTION');
+  
+  const handleCheckInComplete = async (coords: {lat: number, lng: number}) => {
+    if (activeJob) {
+      try {
+        await technicianService.updateJobProgress(activeJob.id, JobStatus.IN_PROGRESS, {
+          status: 'Technician On Site',
+          note: `Checked in via mobile app. GPS: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
+        });
+        toast.success("Check-in confirmed");
+        setState('BEFORE_PHOTOS');
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to check in");
+      }
+    }
+  };
+
+  const handleBeforePhotosComplete = async (file?: File) => {
+    if (activeJob) {
+      try {
+        if (file) {
+          await technicianService.uploadEvidence(activeJob.id, file, 'BEFORE');
+        }
+        await technicianService.updateJobProgress(activeJob.id, JobStatus.IN_PROGRESS, {
+          status: 'Work Started',
+          note: 'Before photos uploaded'
+        });
+        setState('WORK_EXECUTION');
+      } catch (error) {
+        console.error("Failed to update job progress", error);
+        toast.error("Failed to save progress");
+      }
+    }
+  };
+
   const handleWorkComplete = () => setState('AFTER_PHOTOS');
-  const handleAfterPhotosComplete = () => setState('COMPLETION');
-  const handleSubmit = () => setState('LOCKED');
+  
+  const handleAfterPhotosComplete = async (file?: File) => {
+    if (activeJob) {
+      try {
+        if (file) {
+          const response = await technicianService.uploadEvidence(activeJob.id, file, 'AFTER');
+          console.log("After photo upload response:", response);
+          toast.success("After photo uploaded");
+        }
+        setState('COMPLETION');
+      } catch (error) {
+        console.error("Failed to upload evidence", error);
+        toast.error("Failed to upload photo");
+      }
+    }
+  };
+  
+  const handleSubmit = async () => {
+    if (activeJob) {
+      await technicianService.updateJobProgress(activeJob.id, JobStatus.COMPLETED, {
+        status: 'Job Completed',
+        note: 'Work finished and verified by technician'
+      });
+      toast.success('Job completed successfully');
+      setState('LOCKED');
+    }
+  };
+
   const handleReturn = () => {
     setActiveJob(null);
     setState('LIST');
   };
 
   return (
-    <div className="flex justify-center bg-slate-800 min-h-screen">
-      {/* Mobile Frame */}
-      <div className="w-full max-w-[400px] bg-slate-50 h-screen shadow-2xl overflow-hidden relative flex flex-col">
+    <div className="flex justify-center h-full w-full">
+      {/* Responsive Frame */}
+      <div className="w-full max-w-7xl bg-slate-50 h-full shadow-2xl overflow-hidden relative flex flex-col md:rounded-2xl md:border md:border-slate-200">
         
         {/* Render Screen Based on State */}
-        {state === 'LIST' && <JobsListScreen onSelect={handleSelectJob} onLogout={onLogout} />}
+        {state === 'LIST' && <JobsListScreen jobs={jobs} onSelect={handleSelectJob} onLogout={onLogout} />}
         
         {state === 'DETAILS' && activeJob && (
           <JobDetailsScreen job={activeJob} onCheckIn={handleCheckIn} onBack={handleBackToList} />

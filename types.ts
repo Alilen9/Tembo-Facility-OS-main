@@ -1,10 +1,10 @@
 
 export enum JobStatus {
-  PENDING = 'Pending',
-  SCHEDULED = 'Scheduled',
-  IN_PROGRESS = 'In Progress',
-  COMPLETED = 'Completed',
-  CANCELLED = 'Cancelled',
+  PENDING = 'PENDING',
+  SCHEDULED = 'SCHEDULED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
 }
 
 export enum JobPriority {
@@ -17,7 +17,7 @@ export enum JobPriority {
 export enum UserRole {
   CLIENT = 'Client',
   TECHNICIAN = 'Technician',
-  ADMIN = 'Ops Admin',
+  ADMIN = 'Admin',
   SUPER_ADMIN = 'Super Admin',
 }
 
