@@ -1,115 +1,192 @@
 import React, { useEffect, useState } from 'react';
 import { clientService, ClientStats } from '../../services/clientService';
-import { Activity, Clock, DollarSign, Plus, ArrowRight } from '../Icons';
+import {
+  Activity,
+  Clock,
+  DollarSign,
+  Calendar,
+  ClipboardList,
+} from '../Icons';
 import { JobStatus } from '../../types';
 
-export const ClientDashboard: React.FC<{ onCreateClick?: () => void }> = ({ onCreateClick }) => {
+export const ClientDashboard: React.FC = () => {
   const [stats, setStats] = useState<ClientStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const data = await clientService.getDashboardStats();
-        console.log("Loaded client stats", data);
-        setStats(data);
-      } catch (error) {
-        console.error("Failed to load client stats", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadStats();
+    clientService
+      .getDashboardStats()
+      .then(setStats)
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-slate-400 animate-pulse">Loading your dashboard...</div>
+      <div className="flex items-center justify-center h-64 text-slate-400 animate-pulse">
+        Loading dashboard…
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-slide-in">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Welcome Back</h1>
-          <p className="text-slate-500 font-medium mt-1">Here is what's happening with your facilities today.</p>
-        </div>
-        <button 
-          onClick={onCreateClick}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-600/20 flex items-center gap-2 transition-all active:scale-95"
-        >
-          <Plus size={18} /> New Request
-        </button>
-      </div>
+    <div className="space-y-10">
+      {/* ================= STATS ================= */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard
+          title="Active Jobs"
+          value={stats?.activeJobsCount ?? 0}
+          subtitle="Currently being worked on"
+          icon={<Activity />}
+          color="blue"
+        />
+        <StatCard
+          title="Pending Approvals"
+          value={stats?.pendingActionsCount ?? 0}
+          subtitle="Waiting for action"
+          icon={<Clock />}
+          color="amber"
+        />
+        <StatCard
+          title="Monthly Spend"
+          value={`KES ${stats?.totalSpend.toLocaleString() ?? 0}`}
+          subtitle="This month"
+          icon={<DollarSign />}
+          color="emerald"
+        />
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><Activity size={24} /></div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active</span>
+      {/* ================= QUICK ACTIONS ================= */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <QuickAction
+          icon={<ClipboardList />}
+          title="My Requests"
+          desc="View all service requests"
+        />
+        <QuickAction
+          icon={<Calendar />}
+          title="Scheduled Jobs"
+          desc="Upcoming services"
+        />
+        <QuickAction
+          icon={<Activity />}
+          title="Job History"
+          desc="Completed maintenance jobs"
+        />
+      </section>
+
+      {/* ================= RECENT REQUESTS ================= */}
+      <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b bg-slate-50">
+          <h3 className="font-black text-slate-900">Recent Requests</h3>
+        </div>
+
+        {stats?.recentJobs?.length ? (
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-slate-500 uppercase text-xs">
+              <tr>
+                <th className="px-6 py-3 text-left">Request</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.recentJobs.map((job) => (
+                <tr
+                  key={job.id}
+                  className="border-t hover:bg-slate-50 transition"
+                >
+                  <td className="px-6 py-4">
+                    <p className="font-bold text-slate-900">{job.title}</p>
+                    <p className="text-xs text-slate-500">{job.category}</p>
+                  </td>
+                  <td>
+                    <StatusPill status={job.status} />
+                  </td>
+                  <td className="text-slate-500">
+                    {new Date(job.dateCreated).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="p-8 text-center text-slate-400">
+            No recent requests found.
           </div>
-          <div className="text-3xl font-black text-slate-900 mb-1">{stats?.activeJobsCount || 0}</div>
-          <div className="text-sm text-slate-500 font-medium">Jobs in progress</div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl"><Clock size={24} /></div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Pending</span>
-          </div>
-          <div className="text-3xl font-black text-slate-900 mb-1">{stats?.pendingActionsCount || 0}</div>
-          <div className="text-sm text-slate-500 font-medium">Actions required</div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><DollarSign size={24} /></div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Spend</span>
-          </div>
-          <div className="text-3xl font-black text-slate-900 mb-1">KES {stats?.totalSpend.toLocaleString() || 0}</div>
-          <div className="text-sm text-slate-500 font-medium">This month</div>
-        </div>
-      </div>
-
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 className="font-bold text-slate-900">Recent Activity</h3>
-          <button className="text-blue-600 text-xs font-bold uppercase tracking-widest hover:text-blue-700">View All</button>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {stats?.recentJobs.map(job => (
-            <div key={job.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group cursor-pointer">
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs ${
-                  job.status === JobStatus.COMPLETED ? 'bg-emerald-500' : 
-                  job.status === JobStatus.IN_PROGRESS ? 'bg-blue-500' : 'bg-slate-400'
-                }`}>
-                  {job.category.charAt(0)}
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 text-sm">{job.title}</h4>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">{job.id} • {new Date(job.dateCreated).toLocaleDateString()}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                  job.status === JobStatus.COMPLETED ? 'bg-emerald-100 text-emerald-700' : 
-                  job.status === JobStatus.IN_PROGRESS ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
-                }`}>
-                  {job.status.replace('_', ' ')}
-                </span>
-                <ArrowRight size={16} className="text-slate-300 group-hover:text-blue-600 transition-colors" />
-              </div>
-            </div>
-          ))}
-          {(!stats?.recentJobs || stats.recentJobs.length === 0) && (
-            <div className="p-8 text-center text-slate-400 text-sm">No recent activity found.</div>
-          )}
-        </div>
-      </div>
+        )}
+      </section>
     </div>
+  );
+};
+
+/* ================= COMPONENTS ================= */
+
+const StatCard = ({
+  title,
+  value,
+  subtitle,
+  icon,
+  color,
+}: {
+  title: string;
+  value: string | number;
+  subtitle: string;
+  icon: React.ReactNode;
+  color: 'blue' | 'amber' | 'emerald';
+}) => {
+  // Tailwind classes mapped for colors
+  const colorMap = {
+    blue: { bg: 'bg-blue-50', text: 'text-blue-600' },
+    amber: { bg: 'bg-amber-50', text: 'text-amber-600' },
+    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600' },
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-2xl border shadow-sm">
+      <div
+        className={`w-12 h-12 flex items-center justify-center rounded-xl ${colorMap[color].bg} ${colorMap[color].text} mb-4`}
+      >
+        {icon}
+      </div>
+      <p className="text-sm text-slate-500 font-bold uppercase">{title}</p>
+      <p className="text-3xl font-black text-slate-900">{value}</p>
+      <p className="text-sm text-slate-500">{subtitle}</p>
+    </div>
+  );
+};
+
+const QuickAction = ({
+  icon,
+  title,
+  desc,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) => (
+  <div className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md transition">
+    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+      {icon}
+    </div>
+    <p className="font-black text-slate-900">{title}</p>
+    <p className="text-sm text-slate-500">{desc}</p>
+  </div>
+);
+
+const StatusPill = ({ status }: { status: JobStatus }) => {
+  const styles: Record<JobStatus, string> = {
+    PENDING: 'bg-slate-100 text-slate-600',
+    IN_PROGRESS: 'bg-blue-100 text-blue-700',
+    COMPLETED: 'bg-emerald-100 text-emerald-700',
+    SCHEDULED: 'bg-indigo-100 text-indigo-700',
+    CANCELLED: 'bg-red-100 text-red-700',
+  };
+
+  return (
+    <span
+      className={`px-3 py-1 rounded-full text-xs font-bold ${styles[status]}`}
+    >
+      {status.replace('_', ' ')}
+    </span>
   );
 };
