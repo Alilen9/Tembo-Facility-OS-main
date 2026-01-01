@@ -1,13 +1,11 @@
 
-import React, { useState } from 'react';
-import { X, ArrowRight, ArrowLeft, Zap, Droplets, Thermometer, Hammer, Shield, SprayCan, AlertCircle, Camera, Upload, CheckCircle2, Clock } from './Icons';
-import { JobPriority } from '../types';
+import React, { useState, useMemo, useRef } from 'react';
+import { X, ArrowRight, ArrowLeft, Zap, Droplets, Thermometer, Hammer, Shield, SprayCan, AlertCircle, Camera, Upload, CheckCircle2, Clock, Search, Plus, MapPin, Briefcase, Trash2, ShieldCheck } from './Icons';
 
 interface CreateRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTrack?: (jobId: string) => void;
-  onSubmit: (data: { title: string; description: string; priority: JobPriority; category: string; location: string; preferredTime: string }) => Promise<string | null>;
+  onTrack?: (data: any) => void;
 }
 
 const CATEGORIES = [
@@ -33,68 +31,113 @@ const TIME_SLOTS = [
   { id: 'evening', label: '04:00 PM - 06:00 PM', period: 'Evening' },
 ];
 
-export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose, onTrack, onSubmit }) => {
+const INITIAL_BUILDINGS = [
+  'Acme HQ - East Wing',
+  'Acme HQ - West Wing',
+  'Acme Warehouse A',
+  'Acme Warehouse B',
+  'North Logistics Hub',
+  'Parking Structure Level 2',
+  'Executive Suites - Floor 4',
+  'Staff Canteen'
+];
+
+export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose, onTrack }) => {
   const [step, setStep] = useState(1);
+  const [buildings, setBuildings] = useState(INITIAL_BUILDINGS);
+  const [buildingSearch, setBuildingSearch] = useState('');
+  const [isAddingBuilding, setIsAddingBuilding] = useState(false);
+  const [newBuildingName, setNewBuildingName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState({
     category: '',
     location: '',
     description: '',
     urgency: 'low',
     availability: 'morning',
-    files: [] as File[],
+    files: [] as { file: File, preview: string }[],
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [createdJobId, setCreatedJobId] = useState<string | null>(null);
 
-  const handleNext = async () => {
+  const filteredBuildings = useMemo(() => {
+    return buildings.filter(b => b.toLowerCase().includes(buildingSearch.toLowerCase()));
+  }, [buildings, buildingSearch]);
+
+  const handleNext = () => {
     if (step === 2 && (!formData.location || !formData.description)) return; 
-    
-    if (step === 4) {
-      setIsSubmitting(true);
-      try {
-        const priorityMap: Record<string, JobPriority> = {
-          'low': JobPriority.LOW,
-          'medium': JobPriority.MEDIUM,
-          'high': JobPriority.HIGH,
-          'critical': JobPriority.CRITICAL
-        };
-
-        const timeSlot = TIME_SLOTS.find(t => t.id === formData.availability);
-
-        const payload = {
-          title: `${CATEGORIES.find(c => c.id === formData.category)?.label || 'Service'} Request at ${formData.location}`,
-          description: formData.description,
-          priority: priorityMap[formData.urgency] || JobPriority.MEDIUM,
-          category: CATEGORIES.find(c => c.id === formData.category)?.label || 'General',
-          location: formData.location,
-          preferredTime: timeSlot ? timeSlot.label : ''
-        };
-
-        const jobId = await onSubmit(payload);
-        if (jobId) setCreatedJobId(jobId);
-        setStep(step + 1);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
-      setStep(step + 1);
-    }
+    setStep(step + 1);
   };
 
-  const handleBack = () => setStep(step - 1);
+  const handleBack = () => {
+    if (step === 2 && isAddingBuilding) {
+      setIsAddingBuilding(false);
+      return;
+    }
+    setStep(step - 1);
+  };
   
   const resetAndClose = () => {
+    // Revoke any created object URLs to prevent memory leaks
+    formData.files.forEach(f => URL.revokeObjectURL(f.preview));
+    
     setStep(1);
+    setIsAddingBuilding(false);
+    setBuildingSearch('');
+    setNewBuildingName('');
     setFormData({ category: '', location: '', description: '', urgency: 'low', availability: 'morning', files: [] });
-    setCreatedJobId(null);
     onClose();
   };
 
   const handleTrackClick = () => {
-    if (onTrack && createdJobId) onTrack(createdJobId);
-    resetAndClose();
+    if (onTrack) {
+      // Pass the actual form data back to the parent
+      onTrack(formData);
+    }
+    // Note: We don't reset immediately here because the parent needs to handle navigation,
+    // but the reset will happen via resetAndClose in handleTrackNewRequest in App.tsx
+    setStep(1);
+    setIsAddingBuilding(false);
+    setFormData({ category: '', location: '', description: '', urgency: 'low', availability: 'morning', files: [] });
+    onClose();
+  };
+
+  const handleAddNewBuilding = () => {
+    if (newBuildingName.trim()) {
+      const updated = [...buildings, newBuildingName.trim()];
+      setBuildings(updated);
+      setFormData({ ...formData, location: newBuildingName.trim() });
+      setIsAddingBuilding(false);
+      setNewBuildingName('');
+      setBuildingSearch('');
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    if (selectedFiles) {
+      // Fix: Explicitly cast Array.from to File[] to ensure the mapper correctly identifies the file type for URL.createObjectURL
+      const newFiles = (Array.from(selectedFiles) as File[]).map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }));
+      setFormData(prev => ({
+        ...prev,
+        files: [...prev.files, ...newFiles]
+      }));
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFormData(prev => {
+      const newFiles = [...prev.files];
+      URL.revokeObjectURL(newFiles[index].preview);
+      newFiles.splice(index, 1);
+      return { ...prev, files: newFiles };
+    });
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   if (!isOpen) return null;
@@ -115,7 +158,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
             </span>
             <h2 className="text-lg font-bold text-slate-800">
               {step === 1 && 'Select Category'}
-              {step === 2 && 'Service Details'}
+              {step === 2 && (isAddingBuilding ? 'Add New Building' : 'Service Details')}
               {step === 3 && 'Urgency & Availability'}
               {step === 4 && 'Add Photos/Video'}
               {step === 5 && 'Request Submitted'}
@@ -166,39 +209,124 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
           {/* STEP 2: DETAILS */}
           {step === 2 && (
             <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Location</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {['HQ - Floor 1', 'HQ - Floor 2', 'Warehouse A', 'North Branch', 'Parking Lot', 'Other'].map(loc => (
-                    <button
-                      key={loc}
-                      onClick={() => setFormData({...formData, location: loc})}
-                      className={`px-4 py-3 rounded-lg border text-sm font-medium text-left transition-colors ${
-                        formData.location === loc
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                        : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-slate-50'
+              {!isAddingBuilding ? (
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-bold text-slate-700">Select Building or Apartment</label>
+                      <button 
+                        onClick={() => setIsAddingBuilding(true)}
+                        className="text-[11px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1 hover:underline"
+                      >
+                        <Plus size={12} /> Add New
+                      </button>
+                    </div>
+                    
+                    <div className="relative mb-3">
+                      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input 
+                        type="text" 
+                        placeholder="Search buildings..." 
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all"
+                        value={buildingSearch}
+                        onChange={(e) => setBuildingSearch(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="max-h-[220px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                      {filteredBuildings.map(loc => (
+                        <button
+                          key={loc}
+                          onClick={() => setFormData({ ...formData, location: loc })}
+                          className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between group ${
+                            formData.location === loc
+                              ? 'border-blue-600 bg-blue-50/50 shadow-sm'
+                              : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${formData.location === loc ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                              <Briefcase size={14} />
+                            </div>
+                            <span className={`text-sm font-bold ${formData.location === loc ? 'text-blue-900' : 'text-slate-700'}`}>{loc}</span>
+                          </div>
+                          {formData.location === loc && <CheckCircle2 size={18} className="text-blue-600" />}
+                        </button>
+                      ))}
+                      {filteredBuildings.length === 0 && (
+                        <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                          <p className="text-sm text-slate-500 font-medium">No buildings match your search.</p>
+                          <button 
+                            onClick={() => setIsAddingBuilding(true)}
+                            className="mt-2 text-blue-600 text-xs font-bold hover:underline"
+                          >
+                            Add "{buildingSearch}" as new building?
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                      Issue Description <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
+                      placeholder="Please describe the issue in detail..."
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    ></textarea>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6 animate-slide-in">
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3">
+                    <MapPin size={20} className="text-blue-600 shrink-0 mt-1" />
+                    <div>
+                      <h4 className="text-sm font-bold text-blue-900">Add New Facility Node</h4>
+                      <p className="text-xs text-blue-700 leading-relaxed mt-1">
+                        Register a new location under your facility management scope. This building will be available for future requests.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Building / Apartment Name</label>
+                      <input 
+                        type="text" 
+                        autoFocus
+                        placeholder="e.g. Riverside Apartments Block B" 
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                        value={newBuildingName}
+                        onChange={(e) => setNewBuildingName(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-[11px] text-slate-500 font-medium italic">
+                      Note: Dispatch will verify the new building location upon arrival.
+                    </div>
+
+                    <button 
+                      onClick={handleAddNewBuilding}
+                      disabled={!newBuildingName.trim()}
+                      className={`w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                        !newBuildingName.trim() ? 'bg-slate-200 text-slate-400' : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg'
                       }`}
                     >
-                      {loc}
+                      Confirm Building <CheckCircle2 size={14} />
                     </button>
-                  ))}
+                    
+                    <button 
+                      onClick={() => setIsAddingBuilding(false)}
+                      className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600"
+                    >
+                      Cancel and return
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
-                  Issue Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
-                  placeholder="Please describe the issue in detail..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                ></textarea>
-                {formData.description.length === 0 && (
-                  <p className="text-xs text-slate-400 mt-1">Please provide at least a few words.</p>
-                )}
-              </div>
+              )}
             </div>
           )}
 
@@ -273,26 +401,77 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
 
           {/* STEP 4: MEDIA */}
           {step === 4 && (
-            <div className="text-center py-8">
-              <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 hover:bg-slate-50 transition-colors cursor-pointer group">
-                <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                  <Camera size={32} />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900">Upload Evidence</h3>
-                <p className="text-sm text-slate-500 mt-1">Take a photo or upload a file</p>
-                <button className="mt-4 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
-                  Select Files
-                </button>
-              </div>
-              <p className="text-xs text-slate-400 mt-4">Supported: JPG, PNG, MP4 (Max 20MB)</p>
+            <div className="space-y-6 animate-slide-in">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                multiple 
+                onChange={handleFileChange}
+              />
               
-              {/* Skip option */}
-              <button 
-                onClick={handleNext}
-                className="mt-8 text-sm text-slate-500 hover:text-slate-800 underline"
-              >
-                Skip this step
-              </button>
+              <div className="text-center">
+                <h3 className="text-lg font-bold text-slate-900">Upload Visual Evidence</h3>
+                <p className="text-sm text-slate-500 mt-1 mb-6">Providing photos helps our technicians prepare for the job.</p>
+              </div>
+
+              {formData.files.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {formData.files.map((fileData, idx) => (
+                    <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-sm group">
+                      <img src={fileData.preview} className="w-full h-full object-cover" alt={`Preview ${idx}`} />
+                      <button 
+                        onClick={() => removeFile(idx)}
+                        className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <button 
+                    onClick={triggerFileInput}
+                    className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                  >
+                    <Plus size={24} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Add More</span>
+                  </button>
+                </div>
+              ) : (
+                <div 
+                  onClick={triggerFileInput}
+                  className="border-2 border-dashed border-slate-300 rounded-[32px] p-12 hover:bg-slate-50 transition-all cursor-pointer group flex flex-col items-center text-center"
+                >
+                  <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-sm">
+                    <Camera size={40} />
+                  </div>
+                  <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">Capture or Upload</h4>
+                  <p className="text-sm text-slate-500 mt-2 max-w-xs">Tap to open camera or browse files to attach evidence of the issue.</p>
+                  
+                  <div className="mt-8 flex gap-3">
+                    <button className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-lg">
+                      <Camera size={14} /> Use Camera
+                    </button>
+                    <button className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-sm hover:bg-slate-50">
+                      <Upload size={14} /> Choose File
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="text-center pt-6">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+                  <ShieldCheck size={12} className="text-emerald-500" /> Secure encrypted upload protocol active
+                </p>
+                {formData.files.length === 0 && (
+                   <button 
+                   onClick={handleNext}
+                   className="mt-6 text-sm text-slate-400 hover:text-slate-600 underline font-medium"
+                 >
+                   Skip this step for now
+                 </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -312,7 +491,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500 font-medium">Location</span>
-                  <span className="font-bold text-slate-900">{formData.location}</span>
+                  <span className="font-bold text-slate-900 truncate max-w-[180px]">{formData.location}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500 font-medium">Urgency</span>
@@ -349,7 +528,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
              <div className="w-20"></div> 
            )}
 
-           {step < 5 && (
+           {step < 5 && !isAddingBuilding && (
              <button
                 onClick={handleNext}
                 disabled={step === 2 && (!formData.location || !formData.description)}
@@ -359,7 +538,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
                   : 'bg-tembo-brand text-white hover:bg-blue-700 hover:shadow-lg active:scale-95'
                 }`}
              >
-               {step === 4 ? (isSubmitting ? 'Submitting...' : 'Confirm & Submit') : 'Next'}
+               {step === 4 ? (formData.files.length > 0 ? 'Submit with Photos' : 'Confirm & Submit') : 'Next'}
                {step !== 4 && <ArrowRight size={16} className="ml-2" />}
              </button>
            )}
@@ -374,7 +553,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
                </button>
                <button
                  onClick={handleTrackClick}
-                 className="flex-1 bg--brand text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                 className="flex-1 bg-tembo-brand text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                >
                  Track Request
                </button>
