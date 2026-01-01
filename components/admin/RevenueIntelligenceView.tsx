@@ -1,17 +1,19 @@
-import { MOCK_JOBS, MOCK_CUSTOMERS } from '@/constants';
+import { MOCK_CUSTOMERS } from '@/constants';
 import { Job, ServiceTarget, UserRole, JobStatus, BillingStatus, HoldReason, TimeRange, INITIAL_SERVICE_TARGETS } from '@/types';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 import { Zap, Calendar, ChevronDown, Target, Settings, SprayCan, Shield, Hammer, Wrench, HardHat, Box, Star, Download } from '../Icons';
 import { isWithinRange } from '@/utils/range';
 import { TargetArchitectDrawer } from './targetArchitectDrawer';
 import { TargetInterventionPanel } from './TargetInterventionPanel';
+import { technicianService } from '../../services/technicianService';
 
 export const RevenueIntelligenceView: React.FC<{ onIntervene?: (jobId: string) => void }> = ({ onIntervene }) => {
   const [activeRange, setActiveRange] = useState<TimeRange>('today');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [interveningJobId, setInterveningJobId] = useState<string | null>(null);
-  const [localJobs, setLocalJobs] = useState<Job[]>(MOCK_JOBS);
+  const [localJobs, setLocalJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Strategic State
   const [serviceTargets, setServiceTargets] = useState<ServiceTarget[]>(INITIAL_SERVICE_TARGETS);
@@ -21,6 +23,20 @@ export const RevenueIntelligenceView: React.FC<{ onIntervene?: (jobId: string) =
 
   const { user } = useAuth();
   const canModifyTargets = user?.role === UserRole.SUPER_ADMIN;
+
+  useEffect(() => {
+    const fetchRevenueData = async () => {
+      try {
+        const jobs = await technicianService.getAllJobs();
+        setLocalJobs(jobs);
+      } catch (error) {
+        console.error("Failed to fetch revenue data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchRevenueData();
+  }, []);
 
   const selectedInterventionJob = useMemo(() => localJobs.find(j => j.id === interveningJobId) || null, [localJobs, interveningJobId]);
   const baseFilteredJobs = localJobs.filter(j => isWithinRange(j.dateCreated, activeRange));
@@ -61,7 +77,7 @@ export const RevenueIntelligenceView: React.FC<{ onIntervene?: (jobId: string) =
   // --- LEDGER LOGIC ---
   const breakdownData = useMemo(() => {
     let data = baseFilteredJobs.map(j => {
-        const client = MOCK_CUSTOMERS.find(c => c.id === j.customerId)?.name || 'Unknown';
+        const client = (j as any).customerName || MOCK_CUSTOMERS.find(c => c.id === j.customerId)?.name || 'Unknown';
         const revStatus = j.billingStatus === BillingStatus.INVOICED ? 'Completed' : j.billingStatus === BillingStatus.PENDING ? 'On Hold' : 'Unbilled';
         return { ...j, client, revStatus, liquidityGrade: (j.holdReason === HoldReason.PENDING_CLIENT_SIGN || j.holdReason === HoldReason.MISSING_EVIDENCE) ? 'A' : 'B' };
     });

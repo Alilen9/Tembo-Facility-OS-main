@@ -112,7 +112,7 @@ export const ClientRequests: React.FC<WorkOrderListProps> = ({ onSelectJob, sele
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-1 sm:gap-2">
                   <StatusIcon status={job.status} />
-                  <span className="text-[10px] sm:text-xs font-mono text-slate-400">#{job.id}</span>
+                  <span className="text-[10px] sm:text-xs font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Ticket #{job.id}</span>
                   <PriorityBadge priority={job.priority} />
                 </div>
                 <ArrowRight size={18} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />

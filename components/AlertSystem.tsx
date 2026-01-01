@@ -1,55 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Clock, Shield, Zap, X, ChevronRight, UserCheck, MessageSquare, Activity, CreditCard } from './Icons';
 import { JobPriority } from '../types';
+import { alertService, AlertType, GlobalAlert } from '../services/alertService';
 
-export enum AlertType {
-  SLA_BREACH = 'SLA_BREACH',
-  SAFETY_INCIDENT = 'SAFETY_INCIDENT',
-  BILLING_RISK = 'BILLING_RISK',
-  STALLED_JOB = 'STALLED_JOB'
-}
-
-export interface GlobalAlert {
-  id: string;
-  type: AlertType;
-  title: string;
-  description: string;
-  timestamp: string;
-  priority: 'emergency' | 'critical' | 'warning';
-  ownerId?: string;
-  ownerName?: string;
-  linkId?: string;
-}
-
-const MOCK_ALERTS: GlobalAlert[] = [
-  {
-    id: 'a1',
-    type: AlertType.SAFETY_INCIDENT,
-    title: 'Technician Incident: Site Lockout',
-    description: 'Tech J. Doe reported aggressive client behavior at Acme Corp HQ.',
-    timestamp: new Date().toISOString(),
-    priority: 'emergency',
-    linkId: 'j101'
-  },
-  {
-    id: 'a2',
-    type: AlertType.SLA_BREACH,
-    title: 'SLA Breach: Loading Dock Door',
-    description: 'Critical repair #j102 is 45 minutes past promised arrival time.',
-    timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    priority: 'critical',
-    linkId: 'j102'
-  },
-  {
-    id: 'a3',
-    type: AlertType.BILLING_RISK,
-    title: 'High-Value Revenue Risk',
-    description: 'Invoice #INV-2023-004 (KES 185k) is now 24h past due.',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    priority: 'warning',
-    linkId: 'INV-2023-004'
-  }
-];
+export { AlertType };
+export type { GlobalAlert };
 
 interface AlertSystemProps {
   isOpen: boolean;
@@ -58,13 +13,25 @@ interface AlertSystemProps {
 }
 
 export const AlertSystem: React.FC<AlertSystemProps> = ({ isOpen, onClose, onAlertAction }) => {
-  const [alerts, setAlerts] = useState<GlobalAlert[]>(MOCK_ALERTS);
+  const [alerts, setAlerts] = useState<GlobalAlert[]>([]);
   const [claimedByMe, setClaimedByMe] = useState<Set<string>>(new Set());
 
-  const handleClaim = (alertId: string) => {
+  useEffect(() => {
+    if (isOpen) {
+      alertService.getActiveAlerts().then(setAlerts);
+    }
+  }, [isOpen]);
+
+  const handleClaim = async (alertId: string) => {
+    await alertService.claimAlert(alertId);
     const next = new Set(claimedByMe);
     next.add(alertId);
     setClaimedByMe(next);
+  };
+
+  const handleResolve = async (alertId: string) => {
+    await alertService.resolveAlert(alertId);
+    setAlerts(prev => prev.filter(a => a.id !== alertId));
   };
 
   const getAlertStyles = (priority: string) => {
@@ -148,6 +115,15 @@ export const AlertSystem: React.FC<AlertSystemProps> = ({ isOpen, onClose, onAle
                           className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold hover:bg-slate-800 transition-colors"
                         >
                           Claim Responsibility
+                        </button>
+                      )}
+
+                      {isClaimed && (
+                        <button 
+                          onClick={() => handleResolve(alert.id)}
+                          className="flex items-center gap-2 bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold hover:bg-emerald-700 transition-colors"
+                        >
+                          Resolve
                         </button>
                       )}
                       

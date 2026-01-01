@@ -59,6 +59,11 @@ export const technicianService = {
   verifyAudit: async (jobId: string, status: 'Passed' | 'Failed', notes?: string) => {
     const response = await apiClient.put(`/admin/jobs/${jobId}/audit`, { status, notes });
     return response.data;
+  },
+
+  getAllJobs: async (): Promise<Job[]> => {
+    const response = await apiClient.get('/admin/jobs');
+    return response.data;
   }
   
 };

@@ -14,10 +14,37 @@ const DEFECT_CATEGORIES = [
   { id: 'billing', label: 'Billing Discrepancy', color: 'bg-yellow-100 text-yellow-700' },
 ];
 
+// Helper to resolve full image URLs
+const getFullUrl = (path?: string) => {
+  if (!path) return undefined;
+  if (path.startsWith('http')) return path;
+  // Fallback to localhost:8080 if env var is missing. Change this port if your backend is different.
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  return `${baseUrl}${path}`;
+};
+
+// Helper to extract images from job structure (either root property or timeline)
+const getJobImages = (job: Job) => {
+  let before = job.proofImages?.before;
+  let after = job.proofImages?.after;
+
+  if (!before && !after) {
+    const timeline = (job as any).timeline || [];
+    if (Array.isArray(timeline)) {
+      timeline.forEach((event: any) => {
+        if (event.evidenceType === 'BEFORE' && event.evidenceUrl) before = event.evidenceUrl;
+        if (event.evidenceType === 'AFTER' && event.evidenceUrl) after = event.evidenceUrl;
+      });
+    }
+  }
+  
+  return { before: getFullUrl(before), after: getFullUrl(after) };
+};
+
 // --- COMPONENT ---
 
 export const QualityControlView: React.FC = () => {
-  const [filterMode, setFilterMode] = useState<'risk' | 'random' | 'all'>('risk');
+  const [filterMode, setFilterMode] = useState<'risk' | 'random' | 'missing_evidence' | 'all'>('risk');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isFlagging, setIsFlagging] = useState(false);
   
@@ -55,6 +82,9 @@ export const QualityControlView: React.FC = () => {
     } else if (filterMode === 'random') {
       // Random Sample (take every 2nd job)
       jobs = jobs.filter((_, i) => i % 2 === 0).slice(0, 5);
+    } else if (filterMode === 'missing_evidence') {
+      // Filter for jobs where the 'after' image is missing
+      jobs = jobs.filter(j => !getJobImages(j).after);
     }
     
     setAuditQueue(jobs);
@@ -62,6 +92,7 @@ export const QualityControlView: React.FC = () => {
   }, [filterMode, allAuditJobs]);
 
   const selectedJob = auditQueue.find(j => j.id === selectedJobId) || auditQueue[0];
+  const proofImages = selectedJob ? getJobImages(selectedJob) : { before: null, after: null };
   
   // Helper to get tech details from state
   const techStats = React.useMemo(() => {
@@ -87,6 +118,7 @@ export const QualityControlView: React.FC = () => {
       await technicianService.verifyAudit(selectedJob.id, status, notes);
       toast.success(`Audit ${status}`);
       
+      setAllAuditJobs(prev => prev.filter(j => j.id !== selectedJob.id));
       const nextQueue = auditQueue.filter(j => j.id !== selectedJob?.id);
       setAuditQueue(nextQueue);
       if (nextQueue.length > 0) setSelectedJobId(nextQueue[0].id);
@@ -147,6 +179,12 @@ export const QualityControlView: React.FC = () => {
                 className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${filterMode === 'random' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Random
+              </button>
+              <button 
+                onClick={() => setFilterMode('missing_evidence')}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${filterMode === 'missing_evidence' ? 'bg-white shadow-sm text-orange-600' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                No Evidence
               </button>
            </div>
         </div>
@@ -222,8 +260,8 @@ export const QualityControlView: React.FC = () => {
                  {/* Before */}
                  <div className="relative group rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 shadow-sm">
                     <span className="absolute top-3 left-3 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded backdrop-blur-md z-10">BEFORE</span>
-                    {selectedJob.proofImages?.before ? (
-                      <img src={selectedJob.proofImages.before} className="w-full h-full object-cover" />
+                    {proofImages.before ? (
+                      <img src={proofImages.before} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-400 italic">No Image</div>
                     )}
@@ -232,8 +270,8 @@ export const QualityControlView: React.FC = () => {
                  {/* After */}
                  <div className="relative group rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 shadow-sm">
                     <span className="absolute top-3 left-3 bg-emerald-600/90 text-white text-xs font-bold px-2 py-1 rounded backdrop-blur-md z-10">AFTER</span>
-                    {selectedJob.proofImages?.after ? (
-                      <img src={selectedJob.proofImages.after} className="w-full h-full object-cover" />
+                    {proofImages.after ? (
+                      <img src={proofImages.after} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-red-400 font-bold bg-red-50">MISSING EVIDENCE</div>
                     )}
