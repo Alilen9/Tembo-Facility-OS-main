@@ -20,9 +20,14 @@ import { MOCK_JOBS } from './constants';
 import { WorkOrderList } from './components/mobile/WorkOrderList';
 import { AdminDispatchConsole } from './components/admin/AdminDispatchConsole';
 import { QualityControlView } from './components/admin/QualityControlView';
-import EnrollTechnicianPage from './components/mobile/EnrollTechnicianPage';
+
+import { YieldLedger } from './components/YieldLedger';
 import { DispatchModal } from './components/admin/DispatchModal';
-import { TechnicianUpgradePage } from './components/TechnicianUpgradePage';
+
+import { TechnicianUpgradePage } from './components/clientUpgradePage';
+import { EnrollTechnicianPage } from './components/mobile/EnrollTechnicianPage';
+
+
 
 type Tab =
   | 'dashboard'
@@ -34,7 +39,8 @@ type Tab =
   | 'billing-report'
   | 'strategic-tower'
   | 'enroll-technician'
-  | 'technician-upgrades';
+  | 'technician-upgrades'
+  | 'yield-ledger'
 
 
 const AuthenticatedApp: React.FC = () => {
@@ -180,14 +186,19 @@ const AuthenticatedApp: React.FC = () => {
         {activeTab === 'quality-control' && <QualityControlView />}
 
         {activeTab === 'enroll-technician' && <EnrollTechnicianPage />}
-         {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
+        {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
+        {activeTab === 'yield-ledger' && <YieldLedger />}
+
+        
 
         {/* ====== BILLING ====== */}
         {activeTab === 'billing' && <BillingContainer />}
-
+         
         {activeTab === 'billing-report' && (
           <BillingReport onBack={() => setActiveTab('billing')} />
+
         )}
+        
 
       </Layout>
 

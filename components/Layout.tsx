@@ -33,7 +33,8 @@ export type TabKey =
   | 'billing-report'
   | 'strategic-tower'
   | 'enroll-technician'
-  | 'technician-upgrades';
+  | 'technician-upgrades'
+  | 'yield-ledger';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -192,8 +193,8 @@ export const Layout: React.FC<LayoutProps> = ({
                 <SidebarItem
                   icon={<CreditCard size={18} />}
                   label="Yield Ledger"
-                  active={activeTab === 'billing'}
-                  onClick={() => onNavigate('billing')}
+                  active={activeTab === 'yield-ledger'}
+                  onClick={() => onNavigate('yield-ledger')}
                 />
                  <SidebarItem
                   icon={<Briefcase size={18} />}
