@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { adminService } from '../../services/adminService';
 import { 
   X, CheckCircle2, UserCheck, Shield, MapPin, Wrench, ArrowRight, ArrowLeft, Camera, 
   Phone, AlertTriangle, Briefcase, Zap, ShieldCheck, FileCheck, ClipboardList, 
@@ -83,12 +84,16 @@ export const EnrollTechnicianPage: React.FC = () => {
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
 
-  const finalizeOnboarding = () => {
+  const finalizeOnboarding = async () => {
     setIsFinalizing(true);
-    setTimeout(() => {
+    try {
+      await adminService.enrollTechnician(formData);
       setStep(10);
+    } catch (error) {
+      console.error("Enrollment failed:", error);
+    } finally {
       setIsFinalizing(false);
-    }, 2000);
+    }
   };
 
   const isStepValid = () => {
@@ -260,6 +265,58 @@ export const EnrollTechnicianPage: React.FC = () => {
             </div>
           )}
 
+          {step === 3 && (
+            <div className="space-y-8 animate-slide-in">
+              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+                <div className="relative z-10">
+                  <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Temporal Origin</h4>
+                  <h3 className="text-3xl font-black uppercase tracking-tight">Experience Calibration</h3>
+                </div>
+                <History size={80} className="text-white/10 absolute -right-4 -bottom-4" />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Initiation Month</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {MONTHS.map(month => (
+                      <button
+                        key={month}
+                        onClick={() => setFormData({...formData, startMonth: month})}
+                        className={`px-2 py-3 rounded-xl text-xs font-bold transition-all ${
+                          formData.startMonth === month 
+                            ? 'bg-blue-600 text-white shadow-lg scale-105' 
+                            : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {month.slice(0, 3)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Initiation Year</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {YEARS.map(year => (
+                      <button
+                        key={year}
+                        onClick={() => setFormData({...formData, startYear: year})}
+                        className={`px-2 py-3 rounded-xl text-xs font-bold transition-all ${
+                          formData.startYear === year 
+                            ? 'bg-blue-600 text-white shadow-lg scale-105' 
+                            : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {step === 4 && (
             <div className="space-y-6 animate-slide-in">
               <div className="bg-slate-900 text-white p-8 rounded-2xl flex justify-between items-center overflow-hidden relative">
@@ -309,9 +366,58 @@ export const EnrollTechnicianPage: React.FC = () => {
             </div>
           )}
 
+          {step === 6 && (
+            <div className="space-y-8 animate-slide-in">
+              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+                <div className="relative z-10">
+                  <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Compliance Layer</h4>
+                  <h3 className="text-3xl font-black uppercase tracking-tight">Certification Data</h3>
+                </div>
+                <ShieldCheck size={80} className="text-white/10 absolute -right-4 -bottom-4" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Certification ID</label>
+                  <input 
+                    type="text" 
+                    placeholder="CERT-2024-X99" 
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" 
+                    value={formData.certNumber} 
+                    onChange={e => setFormData({...formData, certNumber: e.target.value})} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Expiry Date</label>
+                  <input 
+                    type="date" 
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-medium outline-none transition-all" 
+                    value={formData.certExpiry} 
+                    onChange={e => setFormData({...formData, certExpiry: e.target.value})} 
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <div 
+                    onClick={simulateUpload}
+                    className={`border-4 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all ${formData.certUpload ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50'}`}
+                  >
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center ${formData.certUpload ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                      {formData.certUpload ? <CheckCircle2 size={32} /> : <Upload size={32} />}
+                    </div>
+                    <div className="text-center">
+                      <h4 className={`text-lg font-black uppercase ${formData.certUpload ? 'text-emerald-700' : 'text-slate-900'}`}>
+                        {formData.certUpload ? 'Certificate Uploaded' : 'Upload Digital Certificate'}
+                      </h4>
+                      <p className="text-xs text-slate-500 font-medium mt-1">PDF, JPG or PNG (Max 5MB)</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ... Other steps truncated for brevity but follow the same rich B2B aesthetic ... */}
           {/* Default view for other steps */}
-          {(step === 3 || step === 6 || step === 7 || step === 8) && (
+          {(step === 7 || step === 8) && (
              <div className="space-y-6">
                 <h3 className="text-2xl font-black text-slate-900 uppercase">Stage 0{step} Protocol</h3>
                 <p className="text-slate-500">Processing complex identity and certification data for decentralized yield ledger integration.</p>

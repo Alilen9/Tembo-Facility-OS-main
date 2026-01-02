@@ -1,4 +1,4 @@
-import apiClient from '../client/apiCient';
+import apiClient from '../client/apiClient';
 import { Job, User } from '../types';
 
 export interface AdminDashboardStats {
@@ -30,6 +30,12 @@ export const adminService = {
   // Assign Technician
   assignTechnician: async (jobId: string, technicianId: string) => {
     const response = await apiClient.put(`/admin/jobs/${jobId}/assign`, { technicianId });
+    return response.data;
+  },
+
+  // Enroll a new technician
+  enrollTechnician: async (data: any) => {
+    const response = await apiClient.post('/admin/technicians', data);
     return response.data;
   }
 };

@@ -1,4 +1,4 @@
-import apiClient from '../client/apiCient';
+import apiClient from '../client/apiClient';
 import { Job, JobStatus, Technician } from '../types';
 
 export const technicianService = {

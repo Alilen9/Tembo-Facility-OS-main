@@ -1,4 +1,5 @@
-import apiClient from '../client/apiCient';
+
+import apiClient from '@/client/apiClient';
 import { Job, JobPriority } from '../types';
 
 export interface ClientStats {
@@ -38,6 +39,11 @@ export const clientService = {
 
   getJobs: async (page = 1, limit = 10, search = ''): Promise<PaginatedJobsResponse> => {
     const response = await apiClient.get(`/client/jobs?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+    return response.data;
+  },
+
+  sendNudge: async (jobId: string) => {
+    const response = await apiClient.post(`/client/jobs/${jobId}/nudge`);
     return response.data;
   }
 };

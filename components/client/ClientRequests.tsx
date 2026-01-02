@@ -46,14 +46,16 @@ export const ClientRequests: React.FC<WorkOrderListProps> = ({ onSelectJob, sele
   const [totalPages, setTotalPages] = useState(1);
   const { user } = useAuth();
 
-  if (!user) return null;
-
   // ================= Fetch Jobs =================
   useEffect(() => {
+    console.log("User in ClientRequests: ", user);
+    if (!user) return;
     const loadJobs = async () => {
+      console.log("Fetching jobs with searchQuery: ", searchQuery, " and page: ", page);
       setLoading(true);
       try {
         const data = await clientService.getJobs(page, 10, searchQuery);
+        console.log("Jobs Data: ", data);
         setJobs(data.jobs || []);
         setTotalPages(data.totalPages || 1);
       } catch (err) {
@@ -63,7 +65,9 @@ export const ClientRequests: React.FC<WorkOrderListProps> = ({ onSelectJob, sele
       }
     };
     loadJobs();
-  }, [page, searchQuery]);
+  }, [page, searchQuery, user]);
+
+  if (!user) return null;
 
   if (loading) {
     return (

@@ -1,11 +1,15 @@
 
 import React, { useState, useMemo, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { X, ArrowRight, ArrowLeft, Zap, Droplets, Thermometer, Hammer, Shield, SprayCan, AlertCircle, Camera, Upload, CheckCircle2, Clock, Search, Plus, MapPin, Briefcase, Trash2, ShieldCheck } from './Icons';
+import { JobPriority } from '@/types';
 
 interface CreateRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   onTrack?: (data: any) => void;
+  onSubmit: (data: { title: string; description: string; priority: JobPriority; category: string; location: string; preferredTime: string }) => Promise<string | null>;
+
 }
 
 const CATEGORIES = [
@@ -42,8 +46,9 @@ const INITIAL_BUILDINGS = [
   'Staff Canteen'
 ];
 
-export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose, onTrack }) => {
+export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose, onTrack, onSubmit }) => {
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [buildings, setBuildings] = useState(INITIAL_BUILDINGS);
   const [buildingSearch, setBuildingSearch] = useState('');
   const [isAddingBuilding, setIsAddingBuilding] = useState(false);
@@ -63,9 +68,46 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
     return buildings.filter(b => b.toLowerCase().includes(buildingSearch.toLowerCase()));
   }, [buildings, buildingSearch]);
 
-  const handleNext = () => {
-    if (step === 2 && (!formData.location || !formData.description)) return; 
-    setStep(step + 1);
+  const handleNext = async () => {
+    if (step === 1 && !formData.category) {
+      toast.error('Please select a category to continue');
+      return;
+    }
+    if (step === 2 && (!formData.location || !formData.description)) {
+      toast.error('Please provide both location and description');
+      return;
+    } 
+    
+    if (step === 4) {
+      setIsSubmitting(true);
+      try {
+        let priority = JobPriority.MEDIUM;
+        if (formData.urgency === 'low') priority = JobPriority.LOW;
+        if (formData.urgency === 'high') priority = JobPriority.HIGH;
+        if (formData.urgency === 'critical') priority = JobPriority.CRITICAL;
+
+        const timeSlot = TIME_SLOTS.find(t => t.id === formData.availability);
+        const preferredTime = timeSlot ? timeSlot.label : 'Anytime';
+
+        const submitData = {
+          title: `${formData.category.charAt(0).toUpperCase() + formData.category.slice(1)} Request`,
+          description: formData.description,
+          priority,
+          category: formData.category.toUpperCase(),
+          location: formData.location,
+          preferredTime
+        };
+
+        const jobId = await onSubmit(submitData);
+        if (jobId) setStep(step + 1);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      setStep(step + 1);
+    }
   };
 
   const handleBack = () => {
@@ -86,6 +128,20 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
     setNewBuildingName('');
     setFormData({ category: '', location: '', description: '', urgency: 'low', availability: 'morning', files: [] });
     onClose();
+  };
+
+  const handleCloseAttempt = () => {
+    if (step === 5) {
+      resetAndClose();
+      return;
+    }
+
+    const isDirty = step > 1 || formData.category || formData.description || formData.location;
+    if (isDirty && !window.confirm('You have unsaved changes. Are you sure you want to discard this request?')) {
+      return;
+    }
+    
+    resetAndClose();
   };
 
   const handleTrackClick = () => {
@@ -145,7 +201,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={resetAndClose}></div>
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={handleCloseAttempt}></div>
 
       {/* Modal Content */}
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -164,7 +220,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
               {step === 5 && 'Request Submitted'}
             </h2>
           </div>
-          <button onClick={resetAndClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={handleCloseAttempt} className="text-slate-400 hover:text-slate-600">
             <X size={20} />
           </button>
         </div>
@@ -188,7 +244,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
                   key={cat.id}
                   onClick={() => {
                     setFormData({ ...formData, category: cat.id });
-                    handleNext();
+                    setStep(2);
                   }}
                   className={`flex flex-col items-center text-center p-6 rounded-xl border-2 transition-all hover:shadow-md ${
                     formData.category === cat.id 
@@ -531,15 +587,15 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
            {step < 5 && !isAddingBuilding && (
              <button
                 onClick={handleNext}
-                disabled={step === 2 && (!formData.location || !formData.description)}
+                disabled={isSubmitting}
                 className={`flex items-center px-8 py-2.5 rounded-lg text-sm font-bold shadow-md transition-all ${
-                  step === 2 && (!formData.location || !formData.description)
+                  isSubmitting
                   ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
                   : 'bg-tembo-brand text-white hover:bg-blue-700 hover:shadow-lg active:scale-95'
                 }`}
              >
-               {step === 4 ? (formData.files.length > 0 ? 'Submit with Photos' : 'Confirm & Submit') : 'Next'}
-               {step !== 4 && <ArrowRight size={16} className="ml-2" />}
+               {isSubmitting ? 'Submitting...' : (step === 4 ? (formData.files.length > 0 ? 'Submit with Photos' : 'Confirm & Submit') : 'Next')}
+               {!isSubmitting && step !== 4 && <ArrowRight size={16} className="ml-2" />}
              </button>
            )}
 
