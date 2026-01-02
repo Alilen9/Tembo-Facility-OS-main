@@ -15,7 +15,8 @@ import {
   Layers,
   ShieldCheck,
   UserCheck,
-  Box
+  Box,
+  Briefcase
 } from './Icons';
 import { AlertSystem, GlobalTriageBar, GlobalAlert } from './AlertSystem';
 
@@ -31,7 +32,8 @@ export type TabKey =
   | 'billing'
   | 'billing-report'
   | 'strategic-tower'
-  | 'enroll-technician';
+  | 'enroll-technician'
+  | 'technician-upgrades';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -192,6 +194,12 @@ export const Layout: React.FC<LayoutProps> = ({
                   label="Yield Ledger"
                   active={activeTab === 'billing'}
                   onClick={() => onNavigate('billing')}
+                />
+                 <SidebarItem
+                  icon={<Briefcase size={18} />}
+                  label="Technician Upgrades"
+                  active={activeTab === 'technician-upgrades'}
+                  onClick={() => onNavigate('technician-upgrades')}
                 />
                 <SidebarItem
                   icon={<Box size={18} />}

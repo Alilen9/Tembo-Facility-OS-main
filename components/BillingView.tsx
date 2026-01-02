@@ -24,10 +24,12 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 export const BillingView: React.FC<BillingViewProps> = ({ onOpenReport, onRequestUpgrade }) => {
   const [activeTab, setActiveTab] = useState<'contracts' | 'invoices'>('contracts');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
   const selectedInvoice = MOCK_INVOICES.find(inv => inv.id === selectedInvoiceId);
+  const selectedPlan = PRICING_PLANS.find(p => p.id === selectedPlanId);
 
-  // ================= RENDER INVOICE DETAILS =================
+  // ================= INVOICE DETAILS =================
   if (selectedInvoice) {
     return (
       <div className="max-w-2xl mx-auto space-y-6 animate-slide-in">
@@ -56,7 +58,38 @@ export const BillingView: React.FC<BillingViewProps> = ({ onOpenReport, onReques
     );
   }
 
-  // ================= RENDER BILLING VIEW =================
+  // ================= PLAN DETAILS MODAL =================
+  if (selectedPlan) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6 animate-slide-in">
+        <button
+          onClick={() => setSelectedPlanId(null)}
+          className="text-sm text-slate-500 font-bold"
+        >
+          ← Back to Plans
+        </button>
+
+        <div className="bg-white border rounded-xl p-6">
+          <h2 className="text-xl font-bold">{selectedPlan.name} Plan</h2>
+          <p className="text-slate-600 mt-2">
+            Price: KES {selectedPlan.price.toLocaleString()} / month
+          </p>
+          <div className="mt-4 space-y-3 text-sm text-slate-600">
+            <div className="flex items-center gap-2"><Clock size={14} />{selectedPlan.sla}</div>
+            <div className="flex items-center gap-2"><Shield size={14} />SLA Commitment</div>
+            <div className="flex items-center gap-2"><CreditCard size={14} />Billing Cycle: Monthly</div>
+          </div>
+
+          <div className="mt-6 bg-blue-50 p-4 rounded-lg text-blue-700 font-bold text-sm">
+            You are currently on this plan. To upgrade, click another plan. 
+            For your current plan, payment prompts will be sent to your registered phone number.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ================= MAIN BILLING VIEW =================
   return (
     <div className="space-y-6 animate-slide-in">
       {/* HEADER */}
@@ -114,11 +147,10 @@ export const BillingView: React.FC<BillingViewProps> = ({ onOpenReport, onReques
                 </div>
 
                 <button
-                  onClick={() => !isActive && onRequestUpgrade(plan.id)}
-                  className={`mt-6 w-full py-2 rounded-lg text-sm font-bold ${isActive ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-white'}`}
-                  disabled={isActive}
+                  onClick={() => isActive ? setSelectedPlanId(plan.id) : onRequestUpgrade(plan.id)}
+                  className={`mt-6 w-full py-2 rounded-lg text-sm font-bold ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-900 text-white'}`}
                 >
-                  {isActive ? 'Current Schedule' : 'Request Upgrade'}
+                  {isActive ? 'Current Schedule – View Details' : 'Request Upgrade'}
                 </button>
               </div>
             );
