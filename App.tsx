@@ -7,7 +7,6 @@ import { CreateRequestModal } from './components/CreateRequestModal';
 
 
 import { MobileTechApp } from './components/mobile/MobileTechApp';
-import { BillingView } from './components/BillingView';
 import { BillingReport } from './components/client/BillingReport';
 
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
@@ -15,13 +14,14 @@ import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { LoginScreen } from './components/LoginScreen';
 import { AccessDenied } from './components/AccessDenied';
 import { AuthProvider, useAuth } from './components/AuthContext';
+import { BillingContainer } from './components/client/BillingContainer';
 import { Job, JobPriority, JobStatus, UserRole, BillingStatus, HoldReason } from './types';
 import { MOCK_JOBS } from './constants';
+import { WorkOrderList } from './components/mobile/WorkOrderList';
 import { AdminDispatchConsole } from './components/admin/AdminDispatchConsole';
-import { DispatchModal } from './components/admin/DispatchModal';
 import { QualityControlView } from './components/admin/QualityControlView';
 import { EnrollTechnicianPage } from './components/mobile/EnrollTechnicianPage';
-import { WorkOrderList } from './components/mobile/WorkOrderList';
+import { DispatchModal } from './components/admin/DispatchModal';
 
 type Tab =
   | 'dashboard'
@@ -178,9 +178,8 @@ const AuthenticatedApp: React.FC = () => {
 
         {activeTab === 'enroll-technician' && <EnrollTechnicianPage />}
 
-        {activeTab === 'billing' && (
-          <BillingView onOpenReport={() => setActiveTab('billing-report')} />
-        )}
+        {/* ====== BILLING ====== */}
+        {activeTab === 'billing' && <BillingContainer />}
 
         {activeTab === 'billing-report' && (
           <BillingReport onBack={() => setActiveTab('billing')} />

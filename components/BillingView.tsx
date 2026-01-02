@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MOCK_INVOICES, MOCK_CONTRACT, PRICING_PLANS } from '../constants';
+
 import {
   DownloadCloud,
   Activity,
@@ -10,23 +11,34 @@ import {
 
 interface BillingViewProps {
   onOpenReport: () => void;
+  onRequestUpgrade: (planId: string) => void;
 }
 
+// Badge component for invoice status
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const styles: Record<string, string> = {
     Active: 'bg-emerald-100 text-emerald-700',
-    Expired: 'bg-red-100 text-red-700'
+    Expired: 'bg-red-100 text-red-700',
+    Pending: 'bg-yellow-100 text-yellow-700',
+    Paid: 'bg-slate-100 text-slate-700'
   };
 
   return (
-    <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${styles[status]}`}>
+    <span
+      className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${styles[status]}`}
+    >
       {status}
     </span>
   );
 };
 
-export const BillingView: React.FC<BillingViewProps> = ({ onOpenReport }) => {
-  const [activeTab, setActiveTab] = useState<'contracts' | 'invoices'>('contracts');
+export const BillingView: React.FC<BillingViewProps> = ({
+  onOpenReport,
+  onRequestUpgrade
+}) => {
+  const [activeTab, setActiveTab] = useState<'contracts' | 'invoices'>(
+    'contracts'
+  );
 
   const totalOwed = MOCK_INVOICES.reduce(
     (s, i) => (i.status !== 'Paid' ? s + i.amount : s),
@@ -118,7 +130,9 @@ export const BillingView: React.FC<BillingViewProps> = ({ onOpenReport }) => {
                   </div>
                 </div>
 
+                {/* REQUEST UPGRADE BUTTON */}
                 <button
+                  onClick={() => !isActive && onRequestUpgrade(plan.id)}
                   className={`mt-6 w-full py-2 rounded-lg text-sm font-bold ${
                     isActive
                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
@@ -142,9 +156,7 @@ export const BillingView: React.FC<BillingViewProps> = ({ onOpenReport }) => {
               {MOCK_INVOICES.map(inv => (
                 <tr key={inv.id} className="border-b">
                   <td className="px-6 py-4 font-bold">{inv.id}</td>
-                  <td className="px-6 py-4">
-                    KES {inv.amount.toLocaleString()}
-                  </td>
+                  <td className="px-6 py-4">KES {inv.amount.toLocaleString()}</td>
                   <td className="px-6 py-4">
                     <StatusBadge status={inv.status} />
                   </td>
