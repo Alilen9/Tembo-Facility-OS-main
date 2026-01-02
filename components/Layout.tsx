@@ -198,7 +198,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 />
                  <SidebarItem
                   icon={<Briefcase size={18} />}
-                  label="Technician Upgrades"
+                  label="ClientUpgrades"
                   active={activeTab === 'technician-upgrades'}
                   onClick={() => onNavigate('technician-upgrades')}
                 />
