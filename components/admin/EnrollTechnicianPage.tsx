@@ -8,7 +8,7 @@ import {
   Droplets, Hammer, SprayCan, Thermometer, Layers, List, Users, ShieldAlert, 
   FileText, Activity, Navigation, Box 
 } from 'lucide-react';
-import React, { useState } from "react";
+
 
 // Constants
 const SKILLS = ["Electrical", "Plumbing", "HVAC", "Networking", "Mechanical"];

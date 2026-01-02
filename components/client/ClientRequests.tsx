@@ -97,7 +97,11 @@ export const ClientRequests: React.FC<WorkOrderListProps> = ({ onSelectJob, sele
       </div>
 
       {/* ================= Job Cards ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className={`grid gap-3 sm:gap-4 ${
+        selectedJobId 
+          ? 'grid-cols-1 xl:grid-cols-2' 
+          : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+      }`}>
         {jobs.length === 0 && (
           <div className="col-span-full text-center text-slate-500 p-6 bg-white rounded-lg border border-slate-200">
             No jobs found.

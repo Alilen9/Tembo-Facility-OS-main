@@ -31,7 +31,7 @@ export const ClientDashboard: React.FC = () => {
   return (
     <div className="space-y-10">
       {/* ================= STATS ================= */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         <StatCard
           title="Active Jobs"
           value={stats?.activeJobsCount ?? 0}
@@ -56,7 +56,7 @@ export const ClientDashboard: React.FC = () => {
       </section>
 
       {/* ================= QUICK ACTIONS ================= */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         <QuickAction
           icon={<ClipboardList />}
           title="My Requests"
@@ -81,34 +81,58 @@ export const ClientDashboard: React.FC = () => {
         </div>
 
         {stats?.recentJobs?.length ? (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-500 uppercase text-xs">
-              <tr>
-                <th className="px-6 py-3 text-left">Request</th>
-                <th>Status</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-slate-500 uppercase text-xs">
+                  <tr>
+                    <th className="px-6 py-3 text-left">Request</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.recentJobs.map((job) => (
+                    <tr
+                      key={job.id}
+                      className="border-t hover:bg-slate-50 transition"
+                    >
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-slate-900">{job.title}</p>
+                        <p className="text-xs text-slate-500">{job.category}</p>
+                      </td>
+                      <td>
+                        <StatusPill status={job.status} />
+                      </td>
+                      <td className="text-slate-500">
+                        {new Date(job.dateCreated).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile List View */}
+            <div className="md:hidden divide-y divide-slate-100">
               {stats.recentJobs.map((job) => (
-                <tr
-                  key={job.id}
-                  className="border-t hover:bg-slate-50 transition"
-                >
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-slate-900">{job.title}</p>
-                    <p className="text-xs text-slate-500">{job.category}</p>
-                  </td>
-                  <td>
+                <div key={job.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <p className="font-bold text-slate-900 text-sm">{job.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{job.category}</p>
+                    </div>
                     <StatusPill status={job.status} />
-                  </td>
-                  <td className="text-slate-500">
-                    {new Date(job.dateCreated).toLocaleDateString()}
-                  </td>
-                </tr>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <Calendar size={14} />
+                    <span>{new Date(job.dateCreated).toLocaleDateString()}</span>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         ) : (
           <div className="p-8 text-center text-slate-400">
             No recent requests found.

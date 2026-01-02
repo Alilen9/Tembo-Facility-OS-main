@@ -19,12 +19,12 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({ children, activeTab, o
 
   const NAV_ITEMS = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: [UserRole.CLIENT, UserRole.ADMIN, UserRole.SUPER_ADMIN] },
-    { id: 'jobs', label: 'Requests', icon: ClipboardList, roles: [UserRole.CLIENT, UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+    { id: 'jobs', label: 'Requests', icon: ClipboardList, roles: [UserRole.CLIENT] },
     { id: 'admin-dispatch', label: 'Dispatch Console', icon: Radio, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
     { id: 'quality-control', label: 'Quality Control', icon: ShieldCheck, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
     { id: 'enroll-technician', label: 'Enroll Tech', icon: UserPlus, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
     { id: 'strategic-tower', label: 'Strategic Tower', icon: Building2, roles: [UserRole.SUPER_ADMIN] },
-    { id: 'mobile-tech', label: 'Tech App', icon: Smartphone, roles: [UserRole.TECHNICIAN, UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+    { id: 'mobile-tech', label: 'Tech App', icon: Smartphone, roles: [UserRole.TECHNICIAN] },
     { id: 'billing', label: 'Billing', icon: CreditCard, roles: [UserRole.CLIENT] },
   ];
 

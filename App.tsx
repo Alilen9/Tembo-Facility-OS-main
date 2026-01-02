@@ -171,7 +171,7 @@ const AuthenticatedApp: React.FC = () => {
 
         {activeTab === 'jobs' && (
           <div className="flex h-[calc(100vh-8rem)] gap-6">
-            <div className={`flex-1 ${selectedJobId ? 'lg:w-1/2' : 'w-full'}`}>
+            <div className={`flex-1 overflow-y-auto ${selectedJobId ? 'hidden lg:block' : 'w-full'}`}>
               <ClientRequests
                 selectedJobId={selectedJobId}
                 onSelectJob={(job) => setSelectedJob(job)}
@@ -179,7 +179,7 @@ const AuthenticatedApp: React.FC = () => {
             </div>
 
             {selectedJobId && selectedJob && (
-              <div className="w-full lg:w-[450px] animate-slide-in">
+              <div className="w-full lg:w-[450px] lg:shrink-0 animate-slide-in h-full">
                 <JobDetail
                   job={selectedJob}
                   onClose={() => setSelectedJob(null)}
@@ -248,3 +248,4 @@ const App: React.FC = () => (
 );
 
 export default App;
+
