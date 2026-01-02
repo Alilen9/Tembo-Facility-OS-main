@@ -20,8 +20,9 @@ import { MOCK_JOBS } from './constants';
 import { WorkOrderList } from './components/mobile/WorkOrderList';
 import { AdminDispatchConsole } from './components/admin/AdminDispatchConsole';
 import { QualityControlView } from './components/admin/QualityControlView';
-import { EnrollTechnicianPage } from './components/mobile/EnrollTechnicianPage';
+import EnrollTechnicianPage from './components/mobile/EnrollTechnicianPage';
 import { DispatchModal } from './components/admin/DispatchModal';
+import { TechnicianUpgradePage } from './components/TechnicianUpgradePage';
 
 type Tab =
   | 'dashboard'
@@ -32,7 +33,9 @@ type Tab =
   | 'billing'
   | 'billing-report'
   | 'strategic-tower'
-  | 'enroll-technician';
+  | 'enroll-technician'
+  | 'technician-upgrades';
+
 
 const AuthenticatedApp: React.FC = () => {
   const { user, logout } = useAuth();
@@ -177,6 +180,7 @@ const AuthenticatedApp: React.FC = () => {
         {activeTab === 'quality-control' && <QualityControlView />}
 
         {activeTab === 'enroll-technician' && <EnrollTechnicianPage />}
+         {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
 
         {/* ====== BILLING ====== */}
         {activeTab === 'billing' && <BillingContainer />}
