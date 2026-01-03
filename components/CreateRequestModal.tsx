@@ -178,8 +178,8 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
     if (selectedFiles) {
       const filesArray = Array.from(selectedFiles) as File[];
       const validFiles = filesArray.filter(file => {
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error(`File ${file.name} exceeds 5MB limit`);
+        if (file.size > 2 * 1024 * 1024) {
+          toast.error(`File ${file.name} exceeds 2MB limit`);
           return false;
         }
         return true;
