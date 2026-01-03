@@ -32,6 +32,8 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({ children, activeTab, o
     { id: 'mobile-tech', label: 'Tech App', icon: Smartphone, roles: [UserRole.TECHNICIAN] },
     { id: 'billing', label: 'Billing', icon: CreditCard, roles: [UserRole.CLIENT] },
     { id: 'admin-chat', label: 'Client Chat', icon: MessageSquare, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+    { id: 'ops-apartments', label: 'Apartments', icon: Building2, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+
   ];
 
   const filteredNav = NAV_ITEMS.filter(item => user && item.roles.includes(user.role));
