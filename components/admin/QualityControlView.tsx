@@ -4,6 +4,7 @@ import { Job, JobPriority, JobStatus, Technician } from '../../types';
 
 import { technicianService } from '../../services/technicianService';
 import { CheckCircle2, Star, Calendar, MapPin, Camera, FileText, MessageSquare, AlertTriangle, ArrowRight, RefreshCw } from '../Icons';
+import { ArrowLeft } from 'lucide-react';
 
 // --- TYPES & HELPERS ---
 
@@ -88,7 +89,9 @@ export const QualityControlView: React.FC = () => {
     }
     
     setAuditQueue(jobs);
-    if (jobs.length > 0 && !selectedJobId) setSelectedJobId(jobs[0].id);
+    if (jobs.length > 0 && !selectedJobId && window.innerWidth >= 768) {
+      setSelectedJobId(jobs[0].id);
+    }
   }, [filterMode, allAuditJobs]);
 
   const selectedJob = auditQueue.find(j => j.id === selectedJobId) || auditQueue[0];
@@ -161,10 +164,10 @@ export const QualityControlView: React.FC = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh-6rem)] -m-6 bg-slate-50 overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-6rem)] -m-6 bg-slate-50 overflow-hidden">
       
       {/* 1. LEFT RAIL: The Queue */}
-      <div className="w-80 bg-white border-r border-slate-200 flex flex-col z-10 shadow-sm">
+      <div className={`w-full md:w-80 bg-white border-r border-slate-200 flex flex-col z-10 shadow-sm ${selectedJobId ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-slate-100">
            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3">Audit Queue ({allAuditJobs.length})</h2>
            <div className="flex bg-slate-100 p-1 rounded-lg">
@@ -214,17 +217,22 @@ export const QualityControlView: React.FC = () => {
       </div>
 
       {/* 2. MAIN STAGE: The Inspection */}
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+      <div className={`flex-1 flex flex-col overflow-hidden relative ${!selectedJobId ? 'hidden md:flex' : 'flex'}`}>
         
         {/* Header */}
-        <div className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm z-10">
-           <div>
+        <div className="bg-white border-b border-slate-200 px-4 md:px-6 py-4 flex justify-between items-center shadow-sm z-10">
+           <div className="flex items-center gap-3">
+             <button onClick={() => setSelectedJobId(null)} className="md:hidden text-slate-500 hover:text-slate-700">
+               <ArrowLeft size={20} />
+             </button>
+             <div>
              <h1 className="text-xl font-bold text-slate-900">Audit Job #{selectedJob.id}</h1>
              <p className="text-xs text-slate-500 flex items-center gap-2 mt-1">
                <Calendar size={12} /> Completed {new Date().toLocaleDateString()}
                <span className="text-slate-300">|</span>
                <MapPin size={12} /> {customer?.address}
              </p>
+           </div>
            </div>
            
            {/* Tech Heat Check */}
@@ -243,7 +251,7 @@ export const QualityControlView: React.FC = () => {
         </div>
 
         {/* Scrollable Evidence Area */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8 bg-slate-50/50">
            
            {/* Section 1: Visual Evidence Comparator */}
            <section>
@@ -256,9 +264,9 @@ export const QualityControlView: React.FC = () => {
                  </span>
               </div>
               
-              <div className="grid grid-cols-2 gap-6 h-64">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-auto md:h-64">
                  {/* Before */}
-                 <div className="relative group rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 shadow-sm">
+                 <div className="relative group rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 shadow-sm h-48 md:h-full">
                     <span className="absolute top-3 left-3 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded backdrop-blur-md z-10">BEFORE</span>
                     {proofImages.before ? (
                       <img src={proofImages.before} className="w-full h-full object-cover" />
@@ -268,7 +276,7 @@ export const QualityControlView: React.FC = () => {
                  </div>
                  
                  {/* After */}
-                 <div className="relative group rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 shadow-sm">
+                 <div className="relative group rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 shadow-sm h-48 md:h-full">
                     <span className="absolute top-3 left-3 bg-emerald-600/90 text-white text-xs font-bold px-2 py-1 rounded backdrop-blur-md z-10">AFTER</span>
                     {proofImages.after ? (
                       <img src={proofImages.after} className="w-full h-full object-cover" />
@@ -280,7 +288,7 @@ export const QualityControlView: React.FC = () => {
            </section>
 
            {/* Section 2: Scope vs Execution */}
-           <section className="grid grid-cols-2 gap-6">
+           <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                    <FileText size={14} /> Scope of Work
@@ -325,18 +333,18 @@ export const QualityControlView: React.FC = () => {
 
         {/* 3. ACTION BAR (Sticky Footer) */}
         <div className="bg-white border-t border-slate-200 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20">
-           <div className="flex items-center justify-between max-w-4xl mx-auto w-full">
+           <div className="flex flex-col md:flex-row items-center justify-between max-w-4xl mx-auto w-full gap-4">
               
-              <div className="text-xs text-slate-400 font-medium">
+              <div className="text-xs text-slate-400 font-medium hidden md:block">
                  Audit Step 3 of 3: Verification
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex gap-4 w-full md:w-auto">
                  {/* Flag Defect Button */}
-                 <div className="relative">
+                 <div className="relative flex-1 md:flex-none">
                    <button 
                      onClick={() => setIsFlagging(!isFlagging)}
-                     className="px-6 py-3 rounded-lg border border-red-200 bg-red-50 text-red-700 font-bold text-sm hover:bg-red-100 hover:border-red-300 transition-all flex items-center gap-2"
+                     className="w-full md:w-auto justify-center px-6 py-3 rounded-lg border border-red-200 bg-red-50 text-red-700 font-bold text-sm hover:bg-red-100 hover:border-red-300 transition-all flex items-center gap-2"
                    >
                      <AlertTriangle size={18} />
                      Flag Issue
@@ -368,7 +376,7 @@ export const QualityControlView: React.FC = () => {
                  {/* Verify Button */}
                  <button 
                    onClick={() => handleVerify('Passed')}
-                   className="px-8 py-3 rounded-lg bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200 transition-all flex items-center gap-2 active:scale-95"
+                   className="flex-1 md:flex-none w-full md:w-auto justify-center px-8 py-3 rounded-lg bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200 transition-all flex items-center gap-2 active:scale-95"
                  >
                    <CheckCircle2 size={18} />
                    Verify & Close

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send } from 'lucide-react';
+import { Send, ArrowLeft, Search, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { adminService } from '../../services/adminService';
 
 interface Message {
   id: string;
@@ -19,57 +20,79 @@ interface Conversation {
   messages: Message[];
 }
 
-const MOCK_CONVERSATIONS: Conversation[] = [
-  {
-    clientId: 'c1',
-    clientName: 'Alice M',
-    ticketNumber: '#10',
-    jobTitle: 'Plumbing Request at HQ – Floor 1',
-    location: 'HQ Building',
-    priority: 'active',
-    messages: [
-      {
-        id: 'm1',
-        sender: 'client',
-        content: 'Hello, I need help with my account.',
-        timestamp: new Date(),
-      },
-    ],
-  },
-  {
-    clientId: 'c2',
-    clientName: 'John K',
-    ticketNumber: '#18',
-    jobTitle: 'HVAC Request at Warehouse A',
-    location: 'Warehouse A',
-    priority: 'emergency',
-    messages: [
-      {
-        id: 'm2',
-        sender: 'client',
-        content: 'My payment failed.',
-        timestamp: new Date(),
-      },
-    ],
-  },
-];
-
-
 const AdminChatPage: React.FC = () => {
-  const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [input, setInput] = useState('');
+  const [typingClientId, setTypingClientId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(0);
+  const prevActiveIdRef = useRef<string | null>(null);
 
   const activeConversation = conversations.find(c => c.clientId === activeClientId);
 
+  const filteredConversations = conversations.filter(c => 
+    c.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.ticketNumber.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Auto-scroll
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeConversation?.messages]);
+    if (!activeConversation) return;
 
-  const handleSend = () => {
+    const isNewConversation = activeConversation.clientId !== prevActiveIdRef.current;
+    const hasNewMessages = activeConversation.messages.length > prevMessageCountRef.current;
+    const isTyping = !!typingClientId;
+
+    if (isNewConversation || hasNewMessages || isTyping) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    prevMessageCountRef.current = activeConversation.messages.length;
+    prevActiveIdRef.current = activeConversation.clientId;
+  }, [activeConversation?.messages, typingClientId, activeConversation?.clientId]);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        const data = await adminService.getMessages();
+        const formatted = data.map((item: any) => ({
+          clientId: String(item.id),
+          clientName: item.client_name,
+          ticketNumber: `#${item.id}`,
+          jobTitle: item.job_title || 'Support Request',
+          location: item.client_company || 'Unknown',
+          priority: (item.priority?.toLowerCase() as any) || 'active',
+          messages: [
+            {
+              id: `orig-${item.id}`,
+              sender: 'client',
+              content: item.message,
+              timestamp: new Date(item.created_at)
+            },
+            ...(item.responses || []).map((r: any, idx: number) => ({
+              id: `resp-${item.id}-${idx}`,
+              sender: r.sender === 'Admin' ? 'admin' : 'client',
+              content: r.message,
+              timestamp: new Date(r.timestamp)
+            }))
+          ]
+        }));
+        setConversations(formatted);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    loadMessages();
+
+    const interval = setInterval(loadMessages, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSend = async () => {
     if (!input.trim() || !activeConversation) return;
+    const currentClientId = activeConversation.clientId;
 
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
@@ -80,24 +103,55 @@ const AdminChatPage: React.FC = () => {
 
     setConversations(prev =>
       prev.map(conv =>
-        conv.clientId === activeClientId
+        conv.clientId === currentClientId
           ? { ...conv, messages: [...conv.messages, newMessage] }
           : conv
       )
     );
 
     setInput('');
-    toast.success('Message sent');
+    
+    try {
+      await adminService.replyToMessage(currentClientId, input);
+      toast.success('Message sent');
+    } catch (error) {
+      toast.error('Failed to send message');
+    }
+  };
+
+  const handleResolve = async () => {
+    if (!activeConversation) return;
+    if (!window.confirm('Are you sure you want to mark this ticket as resolved?')) return;
+
+    try {
+      await adminService.resolveTicket(activeConversation.clientId);
+      toast.success('Ticket resolved');
+      setConversations(prev => prev.filter(c => c.clientId !== activeConversation.clientId));
+      setActiveClientId(null);
+    } catch (error) {
+      toast.error('Failed to resolve ticket');
+    }
   };
 
   return (
     <div className="h-[80vh] border border-slate-200 rounded-2xl shadow-lg bg-white flex overflow-hidden">
 
       {/* LEFT: CLIENT LIST */}
-      <div className="w-1/3 border-r border-slate-200 bg-slate-50 p-4 overflow-y-auto">
+      <div className={`w-full md:w-1/3 border-r border-slate-200 bg-slate-50 p-4 overflow-y-auto ${activeClientId ? 'hidden md:block' : ''}`}>
         <h2 className="font-bold text-slate-900 mb-4">Clients</h2>
 
-        {conversations.map(client => (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            type="text"
+            placeholder="Search clients..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+        </div>
+
+        {filteredConversations.map(client => (
           <button
             key={client.clientId}
             onClick={() => setActiveClientId(client.clientId)}
@@ -116,7 +170,7 @@ const AdminChatPage: React.FC = () => {
       </div>
 
       {/* RIGHT: CHAT WINDOW */}
-      <div className="flex-1 flex flex-col p-6">
+      <div className={`flex-1 flex flex-col p-4 md:p-6 ${!activeClientId ? 'hidden md:flex' : ''}`}>
         {!activeConversation ? (
           <div className="flex-1 flex items-center justify-center text-slate-400">
             Select a client to start chatting
@@ -125,7 +179,11 @@ const AdminChatPage: React.FC = () => {
           <>
            {/* CHAT HEADER */}
 <div className="border-b border-slate-200 pb-4 mb-4 flex justify-between items-start">
-  <div>
+  <div className="flex items-start gap-3">
+    <button onClick={() => setActiveClientId(null)} className="md:hidden mt-1 text-slate-500 hover:text-slate-700">
+      <ArrowLeft size={20} />
+    </button>
+    <div>
     <h1 className="text-xl font-black text-slate-900">
       {activeConversation.clientName}
     </h1>
@@ -137,20 +195,32 @@ const AdminChatPage: React.FC = () => {
     <p className="text-xs text-slate-500 mt-0.5">
       Ticket {activeConversation.ticketNumber}
     </p>
+
+  </div>
   </div>
 
-  {/* PRIORITY BADGE */}
-  <span
-    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-      activeConversation.priority === 'emergency'
-        ? 'bg-red-100 text-red-700'
-        : activeConversation.priority === 'active'
-        ? 'bg-orange-100 text-orange-700'
-        : 'bg-blue-100 text-blue-700'
-    }`}
-  >
-    {activeConversation.priority.toUpperCase()}
-  </span>
+  <div className="flex items-center gap-3">
+    <button
+      onClick={handleResolve}
+      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors"
+    >
+      <CheckCircle size={14} />
+      Resolve
+    </button>
+
+    {/* PRIORITY BADGE */}
+    <span
+      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+        activeConversation.priority === 'emergency'
+          ? 'bg-red-100 text-red-700'
+          : activeConversation.priority === 'active'
+          ? 'bg-orange-100 text-orange-700'
+          : 'bg-blue-100 text-blue-700'
+      }`}
+    >
+      {activeConversation.priority.toUpperCase()}
+    </span>
+  </div>
 </div>
 
 
@@ -172,6 +242,15 @@ const AdminChatPage: React.FC = () => {
                   </div>
                 </div>
               ))}
+              {typingClientId === activeConversation.clientId && (
+                <div className="flex justify-start animate-fade-in">
+                  <div className="bg-white p-4 rounded-2xl rounded-bl-none shadow-sm border border-slate-100 flex gap-1 items-center w-16">
+                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
