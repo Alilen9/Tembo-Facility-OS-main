@@ -24,6 +24,8 @@ import toast, { Toaster } from 'react-hot-toast';
 import { ClientRequests } from './components/client/ClientRequests';
 import { clientService } from './services/clientService';
 import { ResponsiveLayout } from './components/ResponsiveLayout';
+
+import { YieldLedger } from './components/YieldLedger';
 import { DispatchModal } from './components/admin/DispatchModal';
 import { TechnicianUpgradePage } from './components/TechnicianUpgradePage';
 import EnrollTechnicianPage from './components/admin/EnrollTechnicianPage';
@@ -38,7 +40,8 @@ type Tab =
   | 'billing-report'
   | 'strategic-tower'
   | 'enroll-technician'
-  | 'technician-upgrades';
+  | 'technician-upgrades'
+  | 'yield-ledger'
 
 
 const AuthenticatedApp: React.FC = () => {
@@ -201,13 +204,17 @@ const AuthenticatedApp: React.FC = () => {
         {activeTab === 'quality-control' && <QualityControlView />}
 
         {activeTab === 'enroll-technician' && <EnrollTechnicianPage />}
-         {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
+        {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
+        {activeTab === 'yield-ledger' && <YieldLedger />}
+
+        
 
         {/* ====== BILLING ====== */}
         {activeTab === 'billing' && <BillingContainer />}
-
+         
         {activeTab === 'billing-report' && (
           <BillingReport onBack={() => setActiveTab('billing')} />
+
         )}
 
       </ResponsiveLayout>
