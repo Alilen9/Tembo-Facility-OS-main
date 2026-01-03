@@ -29,6 +29,8 @@ import { YieldLedger } from './components/YieldLedger';
 import { DispatchModal } from './components/admin/DispatchModal';
 import { EnrollTechnicianPage } from './components/admin/EnrollTechnicianPage';
 import { TechnicianUpgradePage } from './components/ClientUpgradePage';
+import AdminChatPage from './components/admin/AdminChatPage';
+
 
 
 type Tab =
@@ -43,6 +45,8 @@ type Tab =
   | 'enroll-technician'
   | 'technician-upgrades'
   | 'yield-ledger'
+  | 'admin-chat';
+  
 
 
 const AuthenticatedApp: React.FC = () => {
@@ -207,6 +211,9 @@ const AuthenticatedApp: React.FC = () => {
         {activeTab === 'quality-control' && <QualityControlView />}
 
         {activeTab === 'enroll-technician' && <EnrollTechnicianPage />}
+      
+        {activeTab === 'admin-chat' && <AdminChatPage />}
+
         {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
         {activeTab === 'yield-ledger' && <YieldLedger />}
 
