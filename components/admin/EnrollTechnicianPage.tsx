@@ -1,5 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
+import { adminService } from '../../services/adminService';
 import { 
   X, CheckCircle2, UserCheck, Shield, MapPin, Wrench, ArrowRight, ArrowLeft, Camera, 
   Phone, AlertTriangle, Briefcase, Zap, ShieldCheck, FileCheck, ClipboardList, 
@@ -7,6 +9,14 @@ import {
   Droplets, Hammer, SprayCan, Thermometer, Layers, List, Users, ShieldAlert, 
   FileText, Activity, Navigation, Box 
 } from 'lucide-react';
+
+
+// Constants
+const SKILLS = ["Electrical", "Plumbing", "HVAC", "Networking", "Mechanical"];
+const STATUS = ["Active", "Inactive"];
+const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract"];
+const GENDERS = ["Male", "Female", "Other"];
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const EXPERTISE_DOMAINS = [
   { id: 'plum', label: 'Plumber', def: 'Water systems, drainage, and industrial piping.', icon: <Droplets size={18} /> },
@@ -27,7 +37,6 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 20 }, (_, i) => (CURRENT_YEAR - i).toString());
 
-const EXISTING_IDS = ['12345678', '87654321'];
 const EXISTING_PHONES = ['254712345678', '254700000000'];
 
 const INITIAL_FORM_STATE = {
@@ -43,7 +52,7 @@ const INITIAL_FORM_STATE = {
   skills: [] as string[],
   profilePhoto: '',
   certNumber: '',
-  certUpload: false,
+  certUpload: '',
   certExpiry: '',
   primaryZone: '',
   adminAcknowledge: false,
@@ -51,6 +60,9 @@ const INITIAL_FORM_STATE = {
 };
 
 export const EnrollTechnicianPage: React.FC = () => {
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const certInputRef = useRef<HTMLInputElement>(null);
+  const [certFile, setCertFile] = useState<File | null>(null);
   const [step, setStep] = useState(0); // 0 is Pre-Flight
   const [isVerifying, setIsVerifying] = useState(false);
   const [duplicateIdError, setDuplicateIdError] = useState(false);
@@ -61,9 +73,13 @@ export const EnrollTechnicianPage: React.FC = () => {
   useEffect(() => {
     if (formData.nationalId.length >= 8) {
       setIsVerifying(true);
-      const timer = setTimeout(() => {
-        setIsVerifying(false);
-        setDuplicateIdError(EXISTING_IDS.includes(formData.nationalId));
+      const timer = setTimeout(async () => {
+        try {
+          const isDuplicate = await adminService.checkNationalId(formData.nationalId);
+          setDuplicateIdError(isDuplicate);
+        } finally {
+          setIsVerifying(false);
+        }
       }, 600);
       return () => clearTimeout(timer);
     }
@@ -83,18 +99,39 @@ export const EnrollTechnicianPage: React.FC = () => {
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
 
-  const finalizeOnboarding = () => {
+  const finalizeOnboarding = async () => {
     setIsFinalizing(true);
-    setTimeout(() => {
+    try {
+      const submissionData = new FormData();
+      submissionData.append('firstName', formData.firstName);
+      submissionData.append('lastName', formData.lastName);
+      submissionData.append('email', formData.email);
+      submissionData.append('phone', formData.phone);
+      submissionData.append('nationalId', formData.nationalId);
+      submissionData.append('profilePhoto', formData.profilePhoto);
+      submissionData.append('certNumber', formData.certNumber);
+      submissionData.append('certExpiry', formData.certExpiry);
+      submissionData.append('primaryZone', formData.primaryZone);
+      formData.skills.forEach(skill => submissionData.append('skills', skill));
+      if (certFile) {
+        submissionData.append('certUpload', certFile);
+      }
+
+      await adminService.enrollTechnician(submissionData);
+      toast.success('Technician enrolled successfully');
       setStep(10);
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to enroll technician');
+    } finally {
       setIsFinalizing(false);
-    }, 2000);
+    }
   };
 
   const isStepValid = () => {
     switch(step) {
       case 0: return formData.preFlight.id && formData.preFlight.certs && formData.preFlight.liability;
-      case 1: return formData.firstName && formData.lastName && formData.nationalId.length >= 8 && !duplicateIdError;
+      case 1: return !isVerifying && formData.firstName && formData.lastName && formData.nationalId.length >= 8 && !duplicateIdError;
       case 2: return formData.phone.length >= 12 && !duplicatePhoneError && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
       case 3: return formData.startMonth && formData.startYear;
       case 4: return formData.skills.length > 0;
@@ -124,12 +161,35 @@ export const EnrollTechnicianPage: React.FC = () => {
     }));
   };
 
-  const simulatePhoto = () => {
-    setFormData({...formData, profilePhoto: 'https://i.pravatar.cc/300?u=tech_enroll'});
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size exceeds 5MB limit');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, profilePhoto: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const simulateUpload = () => {
-    setFormData({...formData, certUpload: true});
+  const handleCertUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size exceeds 5MB limit');
+        return;
+      }
+      setCertFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, certUpload: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleCheck = (key: keyof typeof formData.preFlight) => {
@@ -260,6 +320,58 @@ export const EnrollTechnicianPage: React.FC = () => {
             </div>
           )}
 
+          {step === 3 && (
+            <div className="space-y-8 animate-slide-in">
+              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+                <div className="relative z-10">
+                  <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Temporal Binding</h4>
+                  <h3 className="text-3xl font-black uppercase tracking-tight">Service Commencement</h3>
+                </div>
+                <Clock size={80} className="text-white/10 absolute -right-4 -bottom-4" />
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Initiation Month</label>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {MONTHS.map(month => (
+                      <button
+                        key={month}
+                        onClick={() => setFormData({ ...formData, startMonth: month })}
+                        className={`py-3 rounded-xl text-xs font-bold transition-all border-2 ${
+                          formData.startMonth === month
+                            ? 'bg-blue-600 border-blue-600 text-white shadow-lg scale-105'
+                            : 'bg-white border-slate-100 text-slate-500 hover:border-blue-200 hover:bg-blue-50'
+                        }`}
+                      >
+                        {month.slice(0, 3)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Fiscal Year</label>
+                  <div className="flex flex-wrap gap-3">
+                    {YEARS.slice(0, 5).map(year => (
+                      <button
+                        key={year}
+                        onClick={() => setFormData({ ...formData, startYear: year })}
+                        className={`px-6 py-3 rounded-xl text-xs font-bold transition-all border-2 ${
+                          formData.startYear === year
+                            ? 'bg-slate-900 border-slate-900 text-white shadow-lg scale-105'
+                            : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300'
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {step === 4 && (
             <div className="space-y-6 animate-slide-in">
               <div className="bg-slate-900 text-white p-8 rounded-2xl flex justify-between items-center overflow-hidden relative">
@@ -289,6 +401,13 @@ export const EnrollTechnicianPage: React.FC = () => {
                 <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Identity Binding</h4>
                 <h3 className="text-3xl font-black uppercase tracking-tight">Portrait Calibration</h3>
               </div>
+              <input 
+                type="file" 
+                ref={photoInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handlePhotoUpload} 
+              />
               <div className="w-72 h-72 rounded-[40px] border-4 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50 group relative shadow-inner">
                  {formData.profilePhoto ? (
                    <img src={formData.profilePhoto} className="w-full h-full object-cover" />
@@ -300,7 +419,7 @@ export const EnrollTechnicianPage: React.FC = () => {
                       <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Awaiting Capture</span>
                    </div>
                  )}
-                 <button onClick={simulatePhoto} className="absolute inset-0 bg-slate-950/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                 <button onClick={() => photoInputRef.current?.click()} className="absolute inset-0 bg-slate-950/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
                     <div className="w-12 h-12 bg-white text-slate-900 rounded-full flex items-center justify-center shadow-lg"><Upload size={24} /></div>
                     <span className="text-[10px] font-black uppercase tracking-widest">Initialize Lens</span>
                  </button>
@@ -309,17 +428,209 @@ export const EnrollTechnicianPage: React.FC = () => {
             </div>
           )}
 
+          {step === 6 && (
+            <div className="space-y-8 animate-slide-in">
+              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+                <div className="relative z-10">
+                  <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Compliance Layer</h4>
+                  <h3 className="text-3xl font-black uppercase tracking-tight">Certification</h3>
+                </div>
+                <FileCheck size={80} className="text-white/10 absolute -right-4 -bottom-4" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">License / Cert ID</label>
+                  <input 
+                    type="text" 
+                    placeholder="LIC-2024-..." 
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" 
+                    value={formData.certNumber} 
+                    onChange={e => setFormData({...formData, certNumber: e.target.value})} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Expiry Date</label>
+                  <input 
+                    type="date" 
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" 
+                    value={formData.certExpiry} 
+                    onChange={e => setFormData({...formData, certExpiry: e.target.value})} 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Digital Proof</label>
+                <input 
+                  type="file" 
+                  ref={certInputRef} 
+                  className="hidden" 
+                  accept="image/*,.pdf" 
+                  onChange={handleCertUpload} 
+                />
+                
+                <div 
+                  onClick={() => certInputRef.current?.click()}
+                  className={`w-full h-48 rounded-3xl border-4 border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer transition-all group ${
+                    formData.certUpload 
+                      ? 'border-emerald-500 bg-emerald-50' 
+                      : 'border-slate-200 bg-slate-50 hover:border-blue-400 hover:bg-blue-50'
+                  }`}
+                >
+                  {formData.certUpload ? (
+                    <>
+                      <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shadow-sm">
+                        <CheckCircle2 size={32} />
+                      </div>
+                      <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">Document Verified</span>
+                      <p className="text-[10px] text-emerald-600 font-medium">Click to replace</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 bg-white text-slate-400 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <Upload size={32} />
+                      </div>
+                      <div className="text-center">
+                        <span className="block text-xs font-black text-slate-500 uppercase tracking-widest">Upload Certificate</span>
+                        <span className="text-[10px] text-slate-400">PDF or High-Res Image</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 8 && (
+            <div className="space-y-8 animate-slide-in">
+              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+                <div className="relative z-10">
+                  <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Final Protocol</h4>
+                  <h3 className="text-3xl font-black uppercase tracking-tight">Data Verification</h3>
+                </div>
+                <ShieldCheck size={80} className="text-white/10 absolute -right-4 -bottom-4" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-2">Identity Matrix</h4>
+                    <div className="flex items-center gap-4">
+                       <img src={formData.profilePhoto || 'https://via.placeholder.com/150'} className="w-16 h-16 rounded-2xl object-cover bg-slate-200" />
+                       <div>
+                          <p className="font-black text-slate-900 text-lg leading-none">{formData.firstName} {formData.lastName}</p>
+                          <p className="text-xs font-mono text-slate-500 mt-1">ID: {formData.nationalId}</p>
+                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                       <div>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Contact Node</p>
+                          <p className="text-sm font-bold text-slate-700">{formData.phone}</p>
+                       </div>
+                       <div>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Email Relay</p>
+                          <p className="text-sm font-bold text-slate-700 truncate">{formData.email}</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-2">Professional Grade</h4>
+                    <div>
+                       <p className="text-[10px] text-slate-400 font-bold uppercase">Expertise Domains</p>
+                       <div className="flex flex-wrap gap-2 mt-1">
+                          {formData.skills.map(s => (
+                             <span key={s} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 uppercase">{s}</span>
+                          ))}
+                       </div>
+                    </div>
+                    <div className="flex items-start gap-3 pt-2">
+                       <div className={`p-2 rounded-xl ${formData.certUpload ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-400'}`}>
+                          <FileCheck size={20} />
+                       </div>
+                       <div>
+                          <p className="text-xs font-bold text-slate-900">License: {formData.certNumber}</p>
+                          <p className="text-[10px] text-slate-500">Expires: {formData.certExpiry}</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              <div onClick={() => setFormData({...formData, adminAcknowledge: !formData.adminAcknowledge})} className={`p-6 rounded-3xl border-2 cursor-pointer transition-all flex items-start gap-4 ${formData.adminAcknowledge ? 'bg-blue-50 border-blue-600' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
+                 <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 ${formData.adminAcknowledge ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-white'}`}>
+                    {formData.adminAcknowledge && <CheckCircle2 size={14} />}
+                 </div>
+                 <div>
+                    <h4 className="text-sm font-black text-slate-900 uppercase">Administrative Attestation</h4>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                       I certify that the captured data points have been verified against physical documentation and comply with the Sovereign Authority Identity protocols. This enrollment is irrevocable once committed to the ledger.
+                    </p>
+                 </div>
+              </div>
+            </div>
+          )}
+
           {/* ... Other steps truncated for brevity but follow the same rich B2B aesthetic ... */}
           {/* Default view for other steps */}
-          {(step === 3 || step === 6 || step === 7 || step === 8) && (
-             <div className="space-y-6">
-                <h3 className="text-2xl font-black text-slate-900 uppercase">Stage 0{step} Protocol</h3>
-                <p className="text-slate-500">Processing complex identity and certification data for decentralized yield ledger integration.</p>
-                <div className="p-20 border-2 border-dashed border-slate-100 rounded-3xl flex items-center justify-center text-slate-300 italic">
-                   Step Logic Loaded - Awaiting Input
+          {step === 7 && (
+            <div className="space-y-8 animate-slide-in">
+              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+                <div className="relative z-10">
+                  <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Geospatial Assignment</h4>
+                  <h3 className="text-3xl font-black uppercase tracking-tight">Operational Zone</h3>
                 </div>
-                <button onClick={handleNext} className="text-xs font-black text-blue-600 uppercase hover:underline">Simulate Step Completion</button>
-             </div>
+                <MapPin size={80} className="text-white/10 absolute -right-4 -bottom-4" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {OPERATIONAL_ZONES.map((zone) => (
+                  <button
+                    key={zone.name}
+                    onClick={() => setFormData({ ...formData, primaryZone: zone.name })}
+                    className={`p-6 rounded-3xl border-2 text-left transition-all group relative overflow-hidden ${
+                      formData.primaryZone === zone.name
+                        ? 'border-blue-600 bg-blue-50/50 shadow-lg scale-[1.02]'
+                        : 'border-slate-100 hover:border-slate-200 bg-white'
+                    }`}
+                  >
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className={`p-3 rounded-xl ${formData.primaryZone === zone.name ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                          <Navigation size={24} />
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          zone.status === 'HIGH' ? 'bg-red-100 text-red-600' :
+                          zone.status === 'OPTIMAL' ? 'bg-emerald-100 text-emerald-600' :
+                          zone.status === 'LOW' ? 'bg-blue-100 text-blue-600' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {zone.status} Load
+                        </span>
+                      </div>
+                      
+                      <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-1">{zone.name}</h4>
+                      
+                      <div className="mt-4">
+                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                          <span>Saturation Index</span>
+                          <span>{zone.saturation}%</span>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full transition-all duration-1000 ${
+                              zone.saturation > 80 ? 'bg-red-500' : 
+                              zone.saturation > 50 ? 'bg-blue-500' : 
+                              'bg-emerald-500'
+                            }`} 
+                            style={{ width: `${zone.saturation}%` }} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           {step === 10 && ( 
@@ -333,6 +644,20 @@ export const EnrollTechnicianPage: React.FC = () => {
                     <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter leading-none">{formData.firstName} {formData.lastName}</h3>
                     <p className="text-sm font-bold text-emerald-600 flex items-center gap-2"><Activity size={16} /> Operational Velocity: Online</p>
                  </div>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 p-6 rounded-2xl mt-6 max-w-xl w-full text-center">
+                <h4 className="text-sm font-black text-blue-900 uppercase mb-2">Temporary Access Credentials</h4>
+                <p className="text-xs text-blue-700 mb-4">Share these credentials with the technician securely.</p>
+                <div className="flex justify-center gap-8">
+                  <div className="text-left">
+                    <span className="block text-[10px] font-bold text-blue-400 uppercase">Username</span>
+                    <span className="font-mono font-bold text-blue-900">{formData.email}</span>
+                  </div>
+                  <div className="text-left">
+                    <span className="block text-[10px] font-bold text-blue-400 uppercase">Default Password</span>
+                    <span className="font-mono font-bold text-blue-900">Tembo123!</span>
+                  </div>
+                </div>
               </div>
               <div className="mt-12 flex gap-4">
                  <button onClick={() => { setFormData(INITIAL_FORM_STATE); setStep(0); }} className="px-10 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all">Enroll Next Specialist</button>

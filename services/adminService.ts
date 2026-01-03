@@ -1,4 +1,4 @@
-import apiClient from '../client/apiCient';
+import apiClient from '../client/apiClient';
 import { Job, User } from '../types';
 
 export interface AdminDashboardStats {
@@ -31,5 +31,18 @@ export const adminService = {
   assignTechnician: async (jobId: string, technicianId: string) => {
     const response = await apiClient.put(`/admin/jobs/${jobId}/assign`, { technicianId });
     return response.data;
+  },
+
+  // Enroll a new technician
+  enrollTechnician: async (data: any) => {
+    const response = await apiClient.post('/admin/technicians', data);
+    return response.data;
+  },
+
+  checkNationalId: async (id: string): Promise<boolean> => {
+    // Simulate backend validation check
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const EXISTING_IDS = ['12345678', '87654321'];
+    return EXISTING_IDS.includes(id);
   }
 };

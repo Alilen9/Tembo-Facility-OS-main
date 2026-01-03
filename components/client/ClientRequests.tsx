@@ -46,14 +46,16 @@ export const ClientRequests: React.FC<WorkOrderListProps> = ({ onSelectJob, sele
   const [totalPages, setTotalPages] = useState(1);
   const { user } = useAuth();
 
-  if (!user) return null;
-
   // ================= Fetch Jobs =================
   useEffect(() => {
+    console.log("User in ClientRequests: ", user);
+    if (!user) return;
     const loadJobs = async () => {
+      console.log("Fetching jobs with searchQuery: ", searchQuery, " and page: ", page);
       setLoading(true);
       try {
         const data = await clientService.getJobs(page, 10, searchQuery);
+        console.log("Jobs Data: ", data);
         setJobs(data.jobs || []);
         setTotalPages(data.totalPages || 1);
       } catch (err) {
@@ -63,7 +65,9 @@ export const ClientRequests: React.FC<WorkOrderListProps> = ({ onSelectJob, sele
       }
     };
     loadJobs();
-  }, [page, searchQuery]);
+  }, [page, searchQuery, user]);
+
+  if (!user) return null;
 
   if (loading) {
     return (
@@ -93,7 +97,11 @@ export const ClientRequests: React.FC<WorkOrderListProps> = ({ onSelectJob, sele
       </div>
 
       {/* ================= Job Cards ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className={`grid gap-3 sm:gap-4 ${
+        selectedJobId 
+          ? 'grid-cols-1 xl:grid-cols-2' 
+          : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+      }`}>
         {jobs.length === 0 && (
           <div className="col-span-full text-center text-slate-500 p-6 bg-white rounded-lg border border-slate-200">
             No jobs found.

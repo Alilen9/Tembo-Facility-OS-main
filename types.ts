@@ -121,6 +121,7 @@ export interface Job {
   auditDate?: string;
   auditDefects?: string[];
   auditNotes?: string;
+  location?: string;
 }
 
 export interface Technician {

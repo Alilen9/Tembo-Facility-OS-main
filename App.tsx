@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout } from './components/Layout';
+
 import { Dashboard } from './components/Dashboard';
 
 import { JobDetail } from './components/JobDetail';
@@ -20,13 +20,15 @@ import { MOCK_JOBS } from './constants';
 import { WorkOrderList } from './components/mobile/WorkOrderList';
 import { AdminDispatchConsole } from './components/admin/AdminDispatchConsole';
 import { QualityControlView } from './components/admin/QualityControlView';
+import toast, { Toaster } from 'react-hot-toast';
+import { ClientRequests } from './components/client/ClientRequests';
+import { clientService } from './services/clientService';
+import { ResponsiveLayout } from './components/ResponsiveLayout';
 
 import { YieldLedger } from './components/YieldLedger';
 import { DispatchModal } from './components/admin/DispatchModal';
-
-import { TechnicianUpgradePage } from './components/clientUpgradePage';
-import { EnrollTechnicianPage } from './components/mobile/EnrollTechnicianPage';
-
+import { EnrollTechnicianPage } from './components/admin/EnrollTechnicianPage';
+import { TechnicianUpgradePage } from './components/ClientUpgradePage';
 
 
 type Tab =
@@ -46,7 +48,7 @@ type Tab =
 const AuthenticatedApp: React.FC = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [dispatchJob, setDispatchJob] = useState<Job | null>(null);
   const [jobs, setJobs] = useState<Job[]>(MOCK_JOBS);
@@ -59,10 +61,22 @@ const AuthenticatedApp: React.FC = () => {
     }
   }, [user]);
 
-  const selectedJob = jobs.find(j => j.id === selectedJobId) || null;
+   const selectedJobId = selectedJob?.id || null;
 
   const handleUpdateJob = (updatedJob: Job) => {
     setJobs(jobs.map(j => j.id === updatedJob.id ? updatedJob : j));
+    if (selectedJob?.id === updatedJob.id) setSelectedJob(updatedJob);
+  };
+  const handleCreateRequest = async (data: { title: string; description: string; priority: JobPriority; category: string; location: string; preferredTime: string }) => {
+    try {
+      const newJob = await clientService.createJob(data);
+      setJobs([newJob, ...jobs]);
+      return newJob.id;
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to create request');
+      return null;
+    }
   };
 
   const handleAssignTech = (jobId: string, technicianId: string) => {
@@ -112,13 +126,17 @@ const AuthenticatedApp: React.FC = () => {
 
     setJobs([newJob, ...jobs]);
     setActiveTab('jobs');
-    setSelectedJobId(newJob.id);
+    setSelectedJob(newJob);
     setIsCreateModalOpen(false);
   };
 
   const handleNavigate = (tab: Tab) => {
+    if (user?.role === UserRole.TECHNICIAN && tab === 'dashboard') {
+      setActiveTab('mobile-tech');
+      return;
+    }
     setActiveTab(tab);
-    setSelectedJobId(null);
+    setSelectedJob(null);
   };
 
   /* MOBILE TECH */
@@ -127,9 +145,9 @@ const AuthenticatedApp: React.FC = () => {
       return <AccessDenied message="Only technicians can access the mobile app view." />;
     }
     return (
-      <Layout activeTab={activeTab} onNavigate={handleNavigate}>
+      <ResponsiveLayout activeTab={activeTab} onNavigate={handleNavigate}>
         <MobileTechApp onLogout={logout} />
-      </Layout>
+      </ResponsiveLayout>
     );
   }
 
@@ -137,16 +155,16 @@ const AuthenticatedApp: React.FC = () => {
   if (['admin-dispatch', 'quality-control', 'strategic-tower', 'enroll-technician'].includes(activeTab)) {
     if (![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(user!.role)) {
       return (
-        <Layout activeTab={activeTab} onNavigate={handleNavigate}>
+        <ResponsiveLayout activeTab={activeTab} onNavigate={handleNavigate}>
           <AccessDenied message="You need higher privileges to access this control center." />
-        </Layout>
+        </ResponsiveLayout>
       );
     }
   }
 
   return (
     <>
-      <Layout activeTab={activeTab} onNavigate={handleNavigate}>
+      <ResponsiveLayout activeTab={activeTab} onNavigate={handleNavigate}>
 
         {activeTab === 'dashboard' && (
           <Dashboard
@@ -159,19 +177,20 @@ const AuthenticatedApp: React.FC = () => {
 
         {activeTab === 'jobs' && (
           <div className="flex h-[calc(100vh-8rem)] gap-6">
-            <div className={`flex-1 ${selectedJobId ? 'lg:w-1/2' : 'w-full'}`}>
-              <WorkOrderList
+            <div className={`flex-1 overflow-y-auto ${selectedJobId ? 'hidden lg:block' : 'w-full'}`}>
+              <ClientRequests
                 selectedJobId={selectedJobId}
-                onSelectJob={(job) => setSelectedJobId(job.id)}
+                onSelectJob={(job) => setSelectedJob(job)}
               />
             </div>
 
             {selectedJobId && selectedJob && (
-              <div className="w-full lg:w-[450px] animate-slide-in">
+              <div className="w-full lg:w-[450px] lg:shrink-0 animate-slide-in h-full">
                 <JobDetail
                   job={selectedJob}
-                  onClose={() => setSelectedJobId(null)}
+                  onClose={() => setSelectedJob(null)}
                   onUpdateJob={handleUpdateJob}
+                  onIntervene={(user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN) ? (job) => setDispatchJob(job) : undefined}
                 />
               </div>
             )}
@@ -200,13 +219,13 @@ const AuthenticatedApp: React.FC = () => {
           <BillingReport onBack={() => setActiveTab('billing')} />
 
         )}
-        
 
-      </Layout>
+      </ResponsiveLayout>
 
       <CreateRequestModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateRequest}
         onTrack={handleTrackNewRequest}
       />
 
@@ -227,8 +246,16 @@ const Main: React.FC = () => {
 
 const App: React.FC = () => (
   <AuthProvider>
+      <Toaster position="top-right" toastOptions={{
+        style: {
+          background: '#7A9AC7', // bg-gray-800
+          color: '#F9FAFB', // text-gray-50
+          border: '1px solid #374151', // border-gray-700
+        },
+      }} />
     <Main />
   </AuthProvider>
 );
 
 export default App;
+

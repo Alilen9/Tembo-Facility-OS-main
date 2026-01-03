@@ -1,4 +1,4 @@
-import apiClient from '../client/apiCient';
+import apiClient from '../client/apiClient';
 import { UserRole } from '../types';
 
 export const authService = {
