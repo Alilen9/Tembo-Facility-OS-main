@@ -322,7 +322,7 @@ export const EnrollTechnicianPage: React.FC = () => {
              </div>
           )}
 
-          {step === 10 && (
+          {step === 10 && ( 
             <div className="h-full flex flex-col animate-slide-in items-center justify-center py-20">
               <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.5)] mb-8"><CheckCircle2 size={48} className="text-white" /></div>
               <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter mb-4 text-center">Enrollment Absolute</h2>

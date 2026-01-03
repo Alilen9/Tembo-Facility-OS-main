@@ -69,6 +69,8 @@ export interface Material {
 }
 
 export interface Job {
+  preferredTime: string;
+  location: string;
   id: string;
   customerId: string;
   category?: string;

@@ -106,6 +106,8 @@ const AuthenticatedApp: React.FC = () => {
       price: 0,
       billingStatus: BillingStatus.UNBILLED,
       holdReason: HoldReason.NONE,
+      preferredTime: '',
+      location: ''
     };
 
     setJobs([newJob, ...jobs]);
