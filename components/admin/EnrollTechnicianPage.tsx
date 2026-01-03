@@ -11,13 +11,6 @@ import {
 } from 'lucide-react';
 
 
-// Constants
-const SKILLS = ["Electrical", "Plumbing", "HVAC", "Networking", "Mechanical"];
-const STATUS = ["Active", "Inactive"];
-const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract"];
-const GENDERS = ["Male", "Female", "Other"];
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
 const EXPERTISE_DOMAINS = [
   { id: 'plum', label: 'Plumber', def: 'Water systems, drainage, and industrial piping.', icon: <Droplets size={18} /> },
   { id: 'elec', label: 'Electrician', def: 'Grid maintenance, high-voltage wiring, and panels.', icon: <Zap size={18} /> },
