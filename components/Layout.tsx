@@ -19,7 +19,7 @@ import {
   Briefcase
 } from './Icons';
 import { AlertSystem, GlobalTriageBar, GlobalAlert } from './AlertSystem';
-import { MessageSquare } from 'lucide-react';
+import { Building2, MessageSquare } from 'lucide-react';
 
 /* =======================
    TAB TYPES (FIX)
@@ -37,6 +37,7 @@ export type TabKey =
   | 'technician-upgrades'
   | 'yield-ledger'
   | 'admin-chat'
+  | 'ops-apartments';
 
 
 interface LayoutProps {
@@ -204,6 +205,12 @@ export const Layout: React.FC<LayoutProps> = ({
                   label="ClientUpgrades"
                   active={activeTab === 'technician-upgrades'}
                   onClick={() => onNavigate('technician-upgrades')}
+                />
+                <SidebarItem
+                  icon={< Building2 size={18} />}
+                  label="Apartments"
+                  active={activeTab === 'ops-apartments'}
+                  onClick={() => onNavigate('ops-apartments')}
                 />
                 <SidebarItem
                   icon={<MessageSquare size={18} />}

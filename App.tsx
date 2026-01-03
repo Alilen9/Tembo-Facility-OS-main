@@ -30,6 +30,7 @@ import { DispatchModal } from './components/admin/DispatchModal';
 import { EnrollTechnicianPage } from './components/admin/EnrollTechnicianPage';
 import { TechnicianUpgradePage } from './components/ClientUpgradePage';
 import AdminChatPage from './components/admin/AdminChatPage';
+import OpsApartmentsPage from './components/admin/OpsApartmentsPage';
 
 
 
@@ -45,7 +46,8 @@ type Tab =
   | 'enroll-technician'
   | 'technician-upgrades'
   | 'yield-ledger'
-  | 'admin-chat';
+  | 'admin-chat'
+  | 'ops-apartments';
   
 
 
@@ -221,7 +223,9 @@ const AuthenticatedApp: React.FC = () => {
 
         {/* ====== BILLING ====== */}
         {activeTab === 'billing' && <BillingContainer />}
-         
+
+         {activeTab === 'ops-apartments' && <OpsApartmentsPage />}
+
         {activeTab === 'billing-report' && (
           <BillingReport onBack={() => setActiveTab('billing')} />
 
