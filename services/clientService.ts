@@ -60,5 +60,10 @@ export const clientService = {
   requestUpgrade: async (data: { planId: string; phone: string; message: string }) => {
     const response = await apiClient.post('/client/upgrade', data);
     return response.data;
+  },
+
+  searchApartments: async (search: string) => {
+    const response = await apiClient.get('/client/apartments', { params: { search } });
+    return response.data;
   }
 };

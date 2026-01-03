@@ -59,6 +59,21 @@ export const adminService = {
   resolveTicket: async (id: string) => {
     const response = await apiClient.put(`/admin/messages/${id}/resolve`);
     return response.data;
+  },
+
+  getUpgradeRequests: async (page = 1, limit = 10): Promise<{ requests: any[], total: number, page: number, totalPages: number }> => {
+    const response = await apiClient.get(`/admin/upgrades?page=${page}&limit=${limit}`);
+    return response.data;
+  },
+
+  getApartments: async (): Promise<any[]> => {
+    const response = await apiClient.get('/admin/apartments');
+    return response.data;
+  },
+
+  addApartment: async (data: any) => {
+    const response = await apiClient.post('/admin/apartments', data);
+    return response.data;
   }
 };
   

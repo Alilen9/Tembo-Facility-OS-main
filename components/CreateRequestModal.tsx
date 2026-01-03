@@ -1,8 +1,9 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { X, ArrowRight, ArrowLeft, Zap, Droplets, Thermometer, Hammer, Shield, SprayCan, AlertCircle, Camera, Upload, CheckCircle2, Clock, Search, Plus, MapPin, Briefcase, Trash2, ShieldCheck } from './Icons';
 import { JobPriority } from '@/types';
+import { clientService } from '@/services/clientService';
 
 interface CreateRequestModalProps {
   isOpen: boolean;
@@ -35,21 +36,11 @@ const TIME_SLOTS = [
   { id: 'evening', label: '04:00 PM - 06:00 PM', period: 'Evening' },
 ];
 
-const INITIAL_BUILDINGS = [
-  'Acme HQ - East Wing',
-  'Acme HQ - West Wing',
-  'Acme Warehouse A',
-  'Acme Warehouse B',
-  'North Logistics Hub',
-  'Parking Structure Level 2',
-  'Executive Suites - Floor 4',
-  'Staff Canteen'
-];
-
 export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose, onTrack, onSubmit }) => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [buildings, setBuildings] = useState(INITIAL_BUILDINGS);
+  const [buildings, setBuildings] = useState<string[]>([]);
+  const [isLoadingBuildings, setIsLoadingBuildings] = useState(false);
   const [buildingSearch, setBuildingSearch] = useState('');
   const [isAddingBuilding, setIsAddingBuilding] = useState(false);
   const [newBuildingName, setNewBuildingName] = useState('');
@@ -64,9 +55,23 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
     files: [] as { file: File, preview: string }[],
   });
 
-  const filteredBuildings = useMemo(() => {
-    return buildings.filter(b => b.toLowerCase().includes(buildingSearch.toLowerCase()));
-  }, [buildings, buildingSearch]);
+  useEffect(() => {
+    if (step === 2 && !isAddingBuilding) {
+      const fetchBuildings = async () => {
+        setIsLoadingBuildings(true);
+        try {
+          const data = await clientService.searchApartments(buildingSearch);
+          setBuildings(data.map((apt: any) => apt.name));
+        } catch (error) {
+          console.error("Failed to fetch buildings", error);
+        } finally {
+          setIsLoadingBuildings(false);
+        }
+      };
+      const timer = setTimeout(fetchBuildings, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [buildingSearch, step, isAddingBuilding]);
 
   const handleNext = async () => {
     if (step === 1 && !formData.category) {
@@ -298,7 +303,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
                     </div>
 
                     <div className="max-h-[220px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-                      {filteredBuildings.map(loc => (
+                      {buildings.map(loc => (
                         <button
                           key={loc}
                           onClick={() => setFormData({ ...formData, location: loc })}
@@ -317,7 +322,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
                           {formData.location === loc && <CheckCircle2 size={18} className="text-blue-600" />}
                         </button>
                       ))}
-                      {filteredBuildings.length === 0 && (
+                      {!isLoadingBuildings && buildings.length === 0 && (
                         <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                           <p className="text-sm text-slate-500 font-medium">No buildings match your search.</p>
                           <button 

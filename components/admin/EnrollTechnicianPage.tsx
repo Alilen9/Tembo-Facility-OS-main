@@ -160,8 +160,8 @@ export const EnrollTechnicianPage: React.FC = () => {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size exceeds 5MB limit');
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('File size exceeds 2MB limit');
         return;
       }
       const reader = new FileReader();
@@ -175,8 +175,8 @@ export const EnrollTechnicianPage: React.FC = () => {
   const handleCertUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size exceeds 5MB limit');
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('File size exceeds 2MB limit');
         return;
       }
       setCertFile(file);
