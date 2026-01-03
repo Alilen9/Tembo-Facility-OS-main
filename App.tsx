@@ -27,8 +27,9 @@ import { ResponsiveLayout } from './components/ResponsiveLayout';
 
 import { YieldLedger } from './components/YieldLedger';
 import { DispatchModal } from './components/admin/DispatchModal';
-import { TechnicianUpgradePage } from './components/TechnicianUpgradePage';
-import EnrollTechnicianPage from './components/admin/EnrollTechnicianPage';
+import { EnrollTechnicianPage } from './components/admin/EnrollTechnicianPage';
+import { TechnicianUpgradePage } from './components/ClientUpgradePage';
+
 
 type Tab =
   | 'dashboard'

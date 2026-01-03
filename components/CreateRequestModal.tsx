@@ -171,8 +171,16 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (selectedFiles) {
-      // Fix: Explicitly cast Array.from to File[] to ensure the mapper correctly identifies the file type for URL.createObjectURL
-      const newFiles = (Array.from(selectedFiles) as File[]).map(file => ({
+      const filesArray = Array.from(selectedFiles) as File[];
+      const validFiles = filesArray.filter(file => {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`File ${file.name} exceeds 5MB limit`);
+          return false;
+        }
+        return true;
+      });
+
+      const newFiles = validFiles.map(file => ({
         file,
         preview: URL.createObjectURL(file)
       }));

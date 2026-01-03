@@ -37,5 +37,12 @@ export const adminService = {
   enrollTechnician: async (data: any) => {
     const response = await apiClient.post('/admin/technicians', data);
     return response.data;
+  },
+
+  checkNationalId: async (id: string): Promise<boolean> => {
+    // Simulate backend validation check
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const EXISTING_IDS = ['12345678', '87654321'];
+    return EXISTING_IDS.includes(id);
   }
 };
