@@ -30,6 +30,7 @@ const getLiveTelemetry = (techId: string | number) => {
 export const DispatchModal: React.FC<DispatchModalProps> = ({ job, isOpen, onClose, onAssign }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
+  const [filterQualifiedOnly, setFilterQualifiedOnly] = useState(false);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -45,7 +46,7 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ job, isOpen, onClo
           const enhancedData = data.map((t: any) => ({
             ...t,
             id: String(t.id),
-            avatarUrl: t.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=random`,
+            avatarUrl: t.profile_photo || t.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=random`,
             skills: t.skills || ['HVAC', 'Electrical', 'Plumbing', 'Security', 'General'].sort(() => 0.5 - Math.random()).slice(0, 3)
           }));
           setTechnicians(enhancedData);
@@ -98,10 +99,11 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ job, isOpen, onClo
     })
     .sort((a, b) => b.matchScore - a.matchScore) // Sort by Best Match
     .filter(t => 
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      t.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
+      (t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      t.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()))) &&
+      (!filterQualifiedOnly || t.missingSkills.length === 0)
     );
-  }, [job, searchQuery, technicians]);
+  }, [job, searchQuery, technicians, filterQualifiedOnly]);
 
   if (!isOpen || !job) return null;
 
@@ -212,6 +214,21 @@ export const DispatchModal: React.FC<DispatchModalProps> = ({ job, isOpen, onClo
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
+             </div>
+             
+             <div className="flex items-center gap-2 px-2 border-r border-slate-200 pr-4 mr-2">
+               <label className="flex items-center gap-2 cursor-pointer select-none group">
+                 <div className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${filterQualifiedOnly ? 'bg-blue-600' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
+                   <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${filterQualifiedOnly ? 'translate-x-4' : ''}`} />
+                 </div>
+                 <input 
+                   type="checkbox" 
+                   className="hidden" 
+                   checked={filterQualifiedOnly} 
+                   onChange={e => setFilterQualifiedOnly(e.target.checked)} 
+                 />
+                 <span className={`text-xs font-bold uppercase tracking-wide transition-colors ${filterQualifiedOnly ? 'text-blue-700' : 'text-slate-500'}`}>Qualified Only</span>
+               </label>
              </div>
              <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
                <X size={24} />

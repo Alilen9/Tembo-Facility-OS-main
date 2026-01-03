@@ -106,24 +106,25 @@ export const AdminDispatchConsole: React.FC<{
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] -m-6 bg-slate-50">
-      <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-20">
-        <div className="flex items-center gap-4">
-           <div className="flex bg-slate-100 p-1 rounded-lg">
-             <button onClick={() => setViewMode('queue')} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${viewMode === 'queue' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>Queue</button>
-             <button onClick={() => setViewMode('live')} className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${viewMode === 'live' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'}`}>Live Monitor</button>
+    <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 md:-m-6 bg-slate-50">
+      <div className="bg-white border-b border-slate-200 px-4 py-4 md:px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm z-20 shrink-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+           <div className="flex bg-slate-100 p-1 rounded-lg w-full sm:w-auto">
+             <button onClick={() => setViewMode('queue')} className={`flex-1 sm:flex-none px-4 py-1.5 rounded-md text-xs font-bold transition-all ${viewMode === 'queue' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>Queue</button>
+             <button onClick={() => setViewMode('live')} className={`flex-1 sm:flex-none px-4 py-1.5 rounded-md text-xs font-bold transition-all ${viewMode === 'live' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'}`}>Live Monitor</button>
            </div>
-           <div className="relative">
+           <div className="relative w-full sm:w-auto">
              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-             <input type="text" placeholder="Global filter..." className="pl-9 pr-3 py-1.5 text-xs font-medium border border-slate-200 rounded-md w-64 focus:ring-2 focus:ring-blue-500/20" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+             <input type="text" placeholder="Global filter..." className="pl-9 pr-3 py-1.5 text-xs font-medium border border-slate-200 rounded-md w-full sm:w-64 focus:ring-2 focus:ring-blue-500/20" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
            </div>
         </div>
-        <button className="bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-md">+ New Job</button>
+        <button className="w-full md:w-auto bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-md">+ New Job</button>
       </div>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 md:p-6">
         {viewMode === 'queue' && (
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <>
+          <div className="hidden md:block bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-left">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
@@ -183,10 +184,71 @@ export const AdminDispatchConsole: React.FC<{
               </tbody>
             </table>
           </div>
+          
+          {/* Mobile List View */}
+          <div className="md:hidden space-y-4">
+            {queueData.map(job => (
+              <div key={job.id} className="bg-white border border-slate-200 rounded-xl relative overflow-hidden shadow-sm">
+                <PriorityStrip priority={job.priority} />
+                <div className="pl-4 p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-500">#{job.id}</span>
+                      <SLACountdown deadline={job.slaDeadline} status={job.status} />
+                    </div>
+                    <button className="text-slate-400"><MoreHorizontal size={18} /></button>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="p-2 bg-slate-100 rounded text-slate-500 shrink-0 mt-0.5">{getCategoryIcon(job.category)}</div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 leading-tight">{job.title}</h4>
+                      <p className="text-xs text-slate-400 mt-0.5">{(job as any).customerName || 'Client'}</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100">
+                    {job.technicianId ? (
+                      <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-700">
+                                {technicians.find(t => t.id === job.technicianId)?.name.charAt(0)}
+                            </div>
+                            <span className="text-xs font-bold text-slate-700">{technicians.find(t => t.id === job.technicianId)?.name}</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Assigned</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Top Match</span>
+                            <button onClick={() => onDispatchClick(job)} className="text-[10px] font-bold text-blue-600 flex items-center gap-1">
+                              Full List <ChevronRight size={12} />
+                            </button>
+                          </div>
+                          <div className="flex gap-2 overflow-x-auto pb-1">
+                            {technicians.filter(t => t.status === 'Available').slice(0, 3).map(tech => (
+                              <button 
+                                key={tech.id}
+                                onClick={() => handleAssign(job.id, tech.id)}
+                                className="flex-shrink-0 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold text-slate-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all"
+                              >
+                                Assign {tech.name.split(' ')[0]}
+                              </button>
+                            ))}
+                          </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          </>
         )}
 
         {viewMode === 'live' && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
              {jobs.map(job => {
                const isAtRisk = job.priority === JobPriority.CRITICAL || (job.slaDeadline && new Date(job.slaDeadline) < new Date());
                const tech = technicians.find(t => t.id === job.technicianId);
