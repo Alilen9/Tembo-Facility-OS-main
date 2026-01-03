@@ -25,7 +25,7 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({ children, activeTab, o
     { id: 'admin-dispatch', label: 'Dispatch Console', icon: Radio, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
     { id: 'quality-control', label: 'Quality Control', icon: ShieldCheck, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
     { id: 'enroll-technician', label: 'Enroll Tech', icon: UserPlus, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
-    { id: 'technician-upgrades', label: 'Tech Upgrades', icon: Briefcase, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+    { id: 'technician-upgrades', label: 'client Upgrades', icon: Briefcase, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
     { id: 'yield-ledger', label: 'Yield Ledger', icon: UserPlus, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
     { id: 'billing-report', label: 'Billing Report', icon: CreditCard, roles: [UserRole.CLIENT, UserRole.ADMIN] },
     { id: 'strategic-tower', label: 'Strategic Tower', icon: Building2, roles: [UserRole.SUPER_ADMIN] },
