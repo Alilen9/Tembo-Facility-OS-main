@@ -4,37 +4,66 @@ import toast from 'react-hot-toast';
 interface Apartment {
   id: string;
   name: string;
-  location: string;
+  county: string;
+  subCounty: string;
   floors: number;
+  managedBy: 'agent' | 'landlord' | 'edlonggroup';
   status: 'active' | 'inactive';
 }
+
+/* ALL KENYAN COUNTIES */
+const COUNTIES = [
+  'Baringo','Bomet','Bungoma','Busia','Elgeyo Marakwet','Embu',
+  'Garissa','Homa Bay','Isiolo','Kajiado','Kakamega','Kericho',
+  'Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui',
+  'Kwale','Laikipia','Lamu','Machakos','Makueni','Mandera',
+  'Marsabit','Meru','Migori','Mombasa','Murang’a','Nairobi',
+  'Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri',
+  'Samburu','Siaya','Taita Taveta','Tana River','Tharaka Nithi',
+  'Trans Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'
+];
 
 const OpsApartmentsPage: React.FC = () => {
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [form, setForm] = useState({
     name: '',
-    location: '',
+    county: '',
+    subCounty: '',
     floors: '',
+    managedBy: 'agent',
     status: 'active',
   });
 
   const handleAddApartment = () => {
-    if (!form.name || !form.location || !form.floors) {
-      toast.error('Fill all fields');
+    const { name, county, subCounty, floors } = form;
+
+    if (!name || !county || !subCounty || !floors) {
+      toast.error('Please fill all fields');
       return;
     }
 
     const newApartment: Apartment = {
       id: `apt-${Date.now()}`,
-      name: form.name,
-      location: form.location,
-      floors: Number(form.floors),
-      status: form.status as 'active' | 'inactive',
+      name,
+      county,
+      subCounty,
+      floors: Number(floors),
+      managedBy: form.managedBy as Apartment['managedBy'],
+      status: form.status as Apartment['status'],
     };
 
     setApartments(prev => [newApartment, ...prev]);
-    setForm({ name: '', location: '', floors: '', status: 'active' });
-    toast.success('Apartment added');
+
+    setForm({
+      name: '',
+      county: '',
+      subCounty: '',
+      floors: '',
+      managedBy: 'agent',
+      status: 'active',
+    });
+
+    toast.success('Apartment added successfully');
   };
 
   return (
@@ -46,7 +75,7 @@ const OpsApartmentsPage: React.FC = () => {
           Apartment Management
         </h1>
         <p className="text-sm text-slate-500">
-          Add apartments that clients can select during service requests
+          Add apartments available for client service requests
         </p>
       </div>
 
@@ -54,23 +83,50 @@ const OpsApartmentsPage: React.FC = () => {
       <div className="bg-white border rounded-2xl p-6 shadow-sm">
         <h2 className="font-bold mb-4">Add New Apartment</h2>
 
-        <div className="grid md:grid-cols-4 gap-4">
+        <div className="grid md:grid-cols-6 gap-4">
+
+          {/* APARTMENT NAME */}
           <input
             type="text"
             placeholder="Apartment Name"
             value={form.name}
             onChange={e => setForm({ ...form, name: e.target.value })}
-            className="px-4 py-3 border rounded-xl"
+            className="px-4 py-3 border rounded-xl md:col-span-2"
           />
 
+          {/* COUNTY */}
+          <select
+            value={form.county}
+            onChange={e =>
+              setForm({
+                ...form,
+                county: e.target.value,
+                subCounty: '',
+              })
+            }
+            className="px-4 py-3 border rounded-xl"
+          >
+            <option value="">Select County</option>
+            {COUNTIES.map(county => (
+              <option key={county} value={county}>
+                {county}
+              </option>
+            ))}
+          </select>
+
+          {/* SUB COUNTY (MANUAL INPUT) */}
           <input
             type="text"
-            placeholder="Location"
-            value={form.location}
-            onChange={e => setForm({ ...form, location: e.target.value })}
+            placeholder="Sub County"
+            value={form.subCounty}
+            onChange={e =>
+              setForm({ ...form, subCounty: e.target.value })
+            }
+            disabled={!form.county}
             className="px-4 py-3 border rounded-xl"
           />
 
+          {/* FLOORS */}
           <input
             type="number"
             placeholder="Floors"
@@ -79,9 +135,25 @@ const OpsApartmentsPage: React.FC = () => {
             className="px-4 py-3 border rounded-xl"
           />
 
+          {/* MANAGED BY */}
+          <select
+            value={form.managedBy}
+            onChange={e =>
+              setForm({ ...form, managedBy: e.target.value })
+            }
+            className="px-4 py-3 border rounded-xl"
+          >
+            <option value="agent">Agent</option>
+            <option value="landlord">Landlord</option>
+            <option value="edlonggroup">Edlong Group</option>
+          </select>
+
+          {/* STATUS */}
           <select
             value={form.status}
-            onChange={e => setForm({ ...form, status: e.target.value })}
+            onChange={e =>
+              setForm({ ...form, status: e.target.value })
+            }
             className="px-4 py-3 border rounded-xl"
           >
             <option value="active">Active</option>
@@ -105,6 +177,7 @@ const OpsApartmentsPage: React.FC = () => {
               <th className="px-4 py-3 text-left">Apartment</th>
               <th className="px-4 py-3 text-left">Location</th>
               <th className="px-4 py-3 text-left">Floors</th>
+              <th className="px-4 py-3 text-left">Managed By</th>
               <th className="px-4 py-3 text-left">Status</th>
             </tr>
           </thead>
@@ -112,7 +185,7 @@ const OpsApartmentsPage: React.FC = () => {
           <tbody>
             {apartments.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center py-8 text-slate-400">
+                <td colSpan={5} className="text-center py-8 text-slate-400">
                   No apartments added yet
                 </td>
               </tr>
@@ -123,8 +196,13 @@ const OpsApartmentsPage: React.FC = () => {
                 <td className="px-4 py-3 font-medium">
                   {apartment.name}
                 </td>
-                <td className="px-4 py-3">{apartment.location}</td>
+                <td className="px-4 py-3">
+                  {apartment.county} – {apartment.subCounty}
+                </td>
                 <td className="px-4 py-3">{apartment.floors}</td>
+                <td className="px-4 py-3 capitalize">
+                  {apartment.managedBy}
+                </td>
                 <td className="px-4 py-3">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
