@@ -26,7 +26,10 @@ import { QualityControlView } from './components/admin/QualityControlView';
 import { YieldLedger } from './components/YieldLedger';
 import { DispatchModal } from './components/admin/DispatchModal';
 import { EnrollTechnicianPage } from './components/admin/EnrollTechnicianPage';
-import { TechnicianUpgradePage } from './components/clientUpgradePage';
+import { TechnicianUpgradePage } from './components/ClientUpgradePage';
+import AdminChatPage from './components/admin/AdminChatPage';
+
+
 
 /* ✅ FIXED TAB TYPE */
 type Tab =
@@ -40,7 +43,10 @@ type Tab =
   | 'strategic-tower'
   | 'enroll-technician'
   | 'technician-upgrades'
-  | 'yield-ledger';
+  | 'yield-ledger'
+  | 'admin-chat';
+  
+
 
 const AuthenticatedApp: React.FC = () => {
   const { user, logout } = useAuth();
@@ -154,6 +160,8 @@ const AuthenticatedApp: React.FC = () => {
         {activeTab === 'quality-control' && <QualityControlView />}
 
         {activeTab === 'enroll-technician' && <EnrollTechnicianPage />}
+      
+        {activeTab === 'admin-chat' && <AdminChatPage />}
 
         {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
 

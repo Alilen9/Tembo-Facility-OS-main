@@ -4,7 +4,8 @@ import { UserRole } from '../types';
 import { 
   LayoutDashboard, ClipboardList, Radio, ShieldCheck, 
   Smartphone, CreditCard, UserPlus, Menu, X, LogOut,
-  Building2
+  Building2,
+  MessageSquare
 } from 'lucide-react';
 import { Briefcase } from './Icons';
 
@@ -30,6 +31,7 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({ children, activeTab, o
     { id: 'strategic-tower', label: 'Strategic Tower', icon: Building2, roles: [UserRole.SUPER_ADMIN] },
     { id: 'mobile-tech', label: 'Tech App', icon: Smartphone, roles: [UserRole.TECHNICIAN] },
     { id: 'billing', label: 'Billing', icon: CreditCard, roles: [UserRole.CLIENT] },
+    { id: 'admin-chat', label: 'Client Chat', icon: MessageSquare, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
   ];
 
   const filteredNav = NAV_ITEMS.filter(item => user && item.roles.includes(user.role));
