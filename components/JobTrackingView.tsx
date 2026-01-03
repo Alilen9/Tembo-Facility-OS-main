@@ -187,6 +187,12 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({ job, technicia
                  </div>
                ))}
             </div>
+            {isResolved && (
+               <div className="bg-emerald-50 border-y border-emerald-100 p-2 flex items-center justify-center gap-2 text-emerald-700 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
+                  <CheckCircle2 size={14} />
+                  This ticket has been marked as resolved.
+               </div>
+            )}
             <div className="p-2 border-t border-slate-100 bg-slate-50 flex gap-2">
                <input 
                  type="text" 

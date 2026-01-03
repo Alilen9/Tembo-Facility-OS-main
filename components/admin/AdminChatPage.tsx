@@ -164,6 +164,7 @@ const AdminChatPage: React.FC = () => {
 
   const handleResolve = async () => {
     if (!activeConversation) return;
+    if (activeConversation.status === 'RESOLVED') return;
     if (!window.confirm('Are you sure you want to mark this ticket as resolved?')) return;
 
     try {
@@ -245,10 +246,15 @@ const AdminChatPage: React.FC = () => {
   <div className="flex items-center gap-3">
     <button
       onClick={handleResolve}
-      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors"
+      disabled={activeConversation.status === 'RESOLVED'}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+        activeConversation.status === 'RESOLVED'
+          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+          : 'bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100'
+      }`}
     >
       <CheckCircle size={14} />
-      Resolve
+      {activeConversation.status === 'RESOLVED' ? 'Resolved' : 'Resolve'}
     </button>
 
     {/* PRIORITY BADGE */}
@@ -265,8 +271,6 @@ const AdminChatPage: React.FC = () => {
     </span>
   </div>
 </div>
-
-
             <div className="flex-1 overflow-y-auto space-y-3 p-4 bg-slate-50 rounded-xl border">
               {activeConversation.messages.map(msg => (
                 <div
@@ -296,6 +300,13 @@ const AdminChatPage: React.FC = () => {
               )}
               <div ref={messagesEndRef} />
             </div>
+
+            {activeConversation.status === 'RESOLVED' && (
+              <div className="mt-4 bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex items-center justify-center gap-2 text-emerald-700 text-sm font-bold animate-in fade-in slide-in-from-bottom-2">
+                <CheckCircle size={16} />
+                This ticket has been marked as resolved.
+              </div>
+            )}
 
             {/* INPUT */}
             <div className="mt-4 flex gap-3">

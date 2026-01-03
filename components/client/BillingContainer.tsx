@@ -6,7 +6,7 @@ import { UpgradeRequestPage } from './UpgradeRequestPage';
 type PageState =
   | { page: 'billing' }
   | { page: 'upgrade'; planId: string }
-  | { page: 'report' }; // <-- add report page
+  | { page: 'report' }; 
 
 export const BillingContainer: React.FC = () => {
   const [state, setState] = useState<PageState>({ page: 'billing' });

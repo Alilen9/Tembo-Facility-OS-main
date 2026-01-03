@@ -1,5 +1,7 @@
 import { PRICING_PLANS } from '@/constants';
 import React, { useState } from 'react';
+import { clientService } from '../../services/clientService';
+import toast from 'react-hot-toast';
 
 interface Props {
   planId: string;
@@ -14,20 +16,20 @@ export const UpgradeRequestPage: React.FC<Props> = ({ planId, onBack }) => {
 
   if (!plan) return null;
 
-  const submitRequest = () => {
+  const submitRequest = async () => {
     if (!phone) {
-      alert('Please enter your phone number.');
+      toast.error('Please enter your phone number.');
       return;
     }
 
-    // 👉 later send to backend / admin
-    console.log('Upgrade request sent:', {
-      planId,
-      phone,
-      message,
-    });
-
-    setSubmitted(true);
+    try {
+      await clientService.requestUpgrade({ planId, phone, message });
+      setSubmitted(true);
+      toast.success('Upgrade request submitted successfully');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to submit upgrade request');
+    }
   };
 
   return (

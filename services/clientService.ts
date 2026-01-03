@@ -55,5 +55,10 @@ export const clientService = {
   createTicket: async (data: { title: string; description: string; type: string; jobId: string }) => {
     const response = await apiClient.post('/client/tickets', data);
     return response.data;
+  },
+
+  requestUpgrade: async (data: { planId: string; phone: string; message: string }) => {
+    const response = await apiClient.post('/client/upgrade', data);
+    return response.data;
   }
 };
