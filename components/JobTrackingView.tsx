@@ -1,6 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Job, Technician, JobStatus } from '../types';
+import { clientService } from '../services/clientService';
+import toast from 'react-hot-toast';
 // Add Activity to the Icons import
 import { Clock, Phone, MessageSquare, CheckCircle2, Send, AlertTriangle, ChevronRight, List, Activity } from './Icons';
 
@@ -45,22 +47,87 @@ const SLATimer: React.FC<{ deadline?: string }> = ({ deadline }) => {
 };
 
 export const JobTrackingView: React.FC<JobTrackingViewProps> = ({ job, technician }) => {
-  const [messages, setMessages] = useState([
-    { id: 1, sender: 'system', text: 'Request received. Analyzing requirements...', time: '09:00 AM' },
-    { id: 2, sender: 'system', text: 'Technician dispatched. ETA updated.', time: '09:15 AM' },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [showFullLog, setShowFullLog] = useState(false);
+  const [isResolved, setIsResolved] = useState(false);
 
-  const handleSend = () => {
-    if(!chatInput.trim()) return;
+  // Poll for new messages (Admin replies)
+  useEffect(() => {
+    const fetchChatHistory = async () => {
+      try {
+        const data = await clientService.getTickets(job.id);
+
+        console.log('Fetched tickets data: ', data);
+
+        if (data && data.length > 0) {
+          const latestTicket = data.reduce((prev: any, current: any) => 
+            new Date(current.created_at).getTime() > new Date(prev.created_at).getTime() ? current : prev
+          );
+          setIsResolved(latestTicket.status === 'RESOLVED');
+        }
+        
+        // Transform tickets/alerts into flat chat history
+        const history = data.flatMap((ticket: any) => {
+          const createdDate = new Date(ticket.created_at);
+          const isCreatedValid = !isNaN(createdDate.getTime());
+
+          const clientMsg = {
+            id: `t-${ticket.id}`,
+            sender: 'me',
+            text: ticket.description,
+            time: isCreatedValid ? createdDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            timestamp: isCreatedValid ? createdDate.getTime() : 0
+          };
+
+          const replies = (ticket.responses || []).map((r: any, idx: number) => {
+            const replyDate = new Date(r.timestamp);
+            const isReplyValid = !isNaN(replyDate.getTime());
+            return {
+              id: `r-${ticket.id}-${idx}`,
+              sender: r.sender === 'Admin' ? 'system' : 'me',
+              text: r.message,
+              time: isReplyValid ? replyDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+              timestamp: isReplyValid ? replyDate.getTime() : 0
+            };
+          });
+
+          return [clientMsg, ...replies];
+        }).sort((a: any, b: any) => a.timestamp - b.timestamp);
+
+        if (history.length > 0) setMessages(history);
+      } catch (error) {
+        console.error('Failed to poll messages', error);
+      }
+    };
+
+    fetchChatHistory();
+    const interval = setInterval(fetchChatHistory, 5000);
+    return () => clearInterval(interval);
+  }, [job.id]);
+
+  const handleSend = async () => {
+    if(!chatInput.trim() || isResolved) return;
+    
+    const messageContent = chatInput;
     setMessages([...messages, {
       id: Date.now(),
       sender: 'me',
-      text: chatInput,
+      text: messageContent,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })
     }]);
     setChatInput('');
+
+    try {
+      await clientService.createTicket({
+        title: 'Live Chat Message',
+        description: messageContent,
+        type: 'INQUIRY',
+        jobId: job.id
+      });
+    } catch (error) {
+      toast.error('Failed to send message');
+    }
   };
 
   return (
@@ -125,11 +192,12 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({ job, technicia
                  type="text" 
                  value={chatInput}
                  onChange={(e) => setChatInput(e.target.value)}
-                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                 placeholder="Message dispatch..."
-                 className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                 onKeyDown={(e) => e.key === 'Enter' && !isResolved && handleSend()}
+                 placeholder={isResolved ? "Ticket Resolved" : "Message dispatch..."}
+                 className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-slate-50 disabled:text-slate-500"
+                 disabled={isResolved}
                />
-               <button onClick={handleSend} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 shadow-md"><Send size={16} /></button>
+               <button onClick={handleSend} disabled={isResolved} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 shadow-md disabled:bg-slate-300 disabled:cursor-not-allowed"><Send size={16} /></button>
             </div>
          </div>
       </section>

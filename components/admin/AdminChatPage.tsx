@@ -5,7 +5,7 @@ import { adminService } from '../../services/adminService';
 
 interface Message {
   id: string;
-  sender: 'client' | 'admin';
+  sender: 'client' | 'admin' | 'system';
   content: string;
   timestamp: Date;
 }
@@ -17,7 +17,9 @@ interface Conversation {
   jobTitle: string;
   location: string;
   priority: 'emergency' | 'active' | 'normal';
+  status: string;
   messages: Message[];
+  latestTicketId?: string;
 }
 
 const AdminChatPage: React.FC = () => {
@@ -54,31 +56,71 @@ const AdminChatPage: React.FC = () => {
   }, [activeConversation?.messages, typingClientId, activeConversation?.clientId]);
 
   useEffect(() => {
-    const loadMessages = async () => {
+     const loadMessages = async () => {
       try {
         const data = await adminService.getMessages();
-        const formatted = data.map((item: any) => ({
-          clientId: String(item.id),
-          clientName: item.client_name,
-          ticketNumber: `#${item.id}`,
-          jobTitle: item.job_title || 'Support Request',
-          location: item.client_company || 'Unknown',
-          priority: (item.priority?.toLowerCase() as any) || 'active',
-          messages: [
-            {
-              id: `orig-${item.id}`,
-              sender: 'client',
-              content: item.message,
-              timestamp: new Date(item.created_at)
-            },
-            ...(item.responses || []).map((r: any, idx: number) => ({
-              id: `resp-${item.id}-${idx}`,
-              sender: r.sender === 'Admin' ? 'admin' : 'client',
-              content: r.message,
-              timestamp: new Date(r.timestamp)
-            }))
-          ]
-        }));
+        console.log("Admin Messaes: ", data);
+        
+        const groupedMap = new Map<string, any>();
+
+        data.forEach((item: any) => {
+          // Group by Job ID if available, otherwise use Ticket ID
+          const key = item.job_id ? String(item.job_id) : `ticket-${item.id}`;
+          
+          if (!groupedMap.has(key)) {
+            groupedMap.set(key, {
+              clientId: key,
+              clientName: item.client_name,
+              ticketNumber: `#${item.id}`,
+              jobTitle: item.job_title || 'Support Request',
+              location: item.client_company || 'Unknown',
+              priority: (item.priority?.toLowerCase() as any) || 'active',
+              status: item.status,
+              latestTicketId: String(item.id),
+              messages: [],
+              lastTimestamp: new Date(item.created_at).getTime()
+            });
+          }
+
+          const group = groupedMap.get(key);
+          const itemTime = new Date(item.created_at).getTime();
+
+          // Update metadata if this ticket is newer
+          if (itemTime > group.lastTimestamp) {
+            group.latestTicketId = String(item.id);
+            group.status = item.status;
+            group.lastTimestamp = itemTime;
+          }
+
+          // Add Client Message (Use 'description' as per API data)
+          group.messages.push({
+            id: `orig-${item.id}`,
+            sender: 'client',
+            content: item.description || item.message || 'No content',
+            timestamp: new Date(item.created_at)
+          });
+
+          // Add Admin/System Responses
+          if (item.responses && Array.isArray(item.responses)) {
+            item.responses.forEach((r: any, idx: number) => {
+              group.messages.push({
+                id: `resp-${item.id}-${idx}`,
+                sender: r.sender === 'Admin' ? 'admin' : 'system',
+                content: r.message,
+                timestamp: new Date(r.timestamp),
+              });
+            });
+          }
+        });
+
+        const formatted = Array.from(groupedMap.values()).map(group => {
+          // Sort messages chronologically
+          group.messages.sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
+          return group;
+        });
+        
+        // Sort conversations by most recent activity
+        formatted.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
         setConversations(formatted);
       } catch (error) {
         console.error(error);
@@ -91,8 +133,9 @@ const AdminChatPage: React.FC = () => {
   }, []);
 
   const handleSend = async () => {
-    if (!input.trim() || !activeConversation) return;
+    if (!input.trim() || !activeConversation || activeConversation.status === 'RESOLVED') return;
     const currentClientId = activeConversation.clientId;
+    const targetTicketId = activeConversation.latestTicketId || currentClientId;
 
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
@@ -112,7 +155,7 @@ const AdminChatPage: React.FC = () => {
     setInput('');
     
     try {
-      await adminService.replyToMessage(currentClientId, input);
+      await adminService.replyToMessage(targetTicketId, input);
       toast.success('Message sent');
     } catch (error) {
       toast.error('Failed to send message');
@@ -164,7 +207,7 @@ const AdminChatPage: React.FC = () => {
             <p className="font-medium">{client.clientName}</p>
             <p className="text-xs opacity-70 truncate">
               {client.messages.at(-1)?.content}
-            </p>
+             </p>
           </button>
         ))}
       </div>
@@ -235,7 +278,7 @@ const AdminChatPage: React.FC = () => {
                       ? 'bg-blue-600 text-white rounded-br-none'
                       : 'bg-white text-slate-900 rounded-bl-none'
                   }`}>
-                    <p>{msg.content}</p>
+                   <p>{msg.content}</p>
                     <span className="text-[10px] opacity-60 block text-right">
                       {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -260,13 +303,15 @@ const AdminChatPage: React.FC = () => {
                 type="text"
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSend()}
-                placeholder="Type your message..."
-                className="flex-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                onKeyDown={e => e.key === 'Enter' && activeConversation.status !== 'RESOLVED' && handleSend()}
+                placeholder={activeConversation.status === 'RESOLVED' ? "Ticket Resolved" : "Type your message..."}
+                className="flex-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                disabled={activeConversation.status === 'RESOLVED'}
               />
               <button
                 onClick={handleSend}
-                className="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2"
+                className="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                disabled={activeConversation.status === 'RESOLVED'}
               >
                 <Send size={16} /> Send
               </button>
@@ -277,5 +322,6 @@ const AdminChatPage: React.FC = () => {
     </div>
   );
 };
+
 
 export default AdminChatPage;

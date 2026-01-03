@@ -29,7 +29,7 @@ export const ClientDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 md:space-y-10">
       {/* ================= STATS ================= */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         <StatCard
@@ -166,7 +166,7 @@ const StatCard = ({
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl border shadow-sm">
+    <div className="bg-white p-4 md:p-6 rounded-2xl border shadow-sm">
       <div
         className={`w-12 h-12 flex items-center justify-center rounded-xl ${colorMap[color].bg} ${colorMap[color].text} mb-4`}
       >
@@ -188,7 +188,7 @@ const QuickAction = ({
   title: string;
   desc: string;
 }) => (
-  <div className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md transition">
+  <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6 hover:shadow-md transition">
     <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
       {icon}
     </div>
