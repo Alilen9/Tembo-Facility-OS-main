@@ -26,11 +26,13 @@ const EXPERTISE_DOMAINS = [
   { id: 'oth', label: 'Other', def: 'Specialized trades not listed in standard domains.', icon: <Wrench size={18} /> }
 ];
 
-const OPERATIONAL_ZONES = [
-  { name: 'Zone A (CBD)', saturation: 88, status: 'HIGH' },
-  { name: 'Zone B (Industrial)', saturation: 42, status: 'OPTIMAL' },
-  { name: 'Zone C (Residential)', saturation: 15, status: 'LOW' },
-  { name: 'North Logistics Hub', saturation: 64, status: 'STABLE' }
+// Replace OPERATIONAL_ZONES with Kenyan counties
+const COUNTIES = [
+  "Mombasa","Kwale","Kilifi","Tana River","Lamu","Taita Taveta","Garissa","Wajir","Mandera","Marsabit",
+  "Isiolo","Meru","Tharaka Nithi","Embu","Kitui","Machakos","Makueni","Nyandarua","Nyeri","Kirinyaga",
+  "Murang'a","Kiambu","Turkana","West Pokot","Samburu","Trans Nzoia","Uasin Gishu","Elgeyo Marakwet","Nandi","Baringo",
+  "Laikipia","Nakuru","Narok","Kajiado","Kericho","Bomet","Kakamega","Vihiga","Bungoma","Busia",
+  "Siaya","Kisumu","Homa Bay","Migori","Kisii","Nyamira","Nairobi"
 ];
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -56,7 +58,8 @@ const INITIAL_FORM_STATE = {
   certExpiry: '',
   primaryZone: '',
   adminAcknowledge: false,
-  preFlight: { id: false, certs: false, liability: false }
+  preFlight: { id: false, certs: false, liability: false },
+  subZone: '' ,
 };
 
 export const EnrollTechnicianPage: React.FC = () => {
@@ -572,66 +575,44 @@ export const EnrollTechnicianPage: React.FC = () => {
 
           {/* ... Other steps truncated for brevity but follow the same rich B2B aesthetic ... */}
           {/* Default view for other steps */}
-          {step === 7 && (
-            <div className="space-y-8 animate-slide-in">
-              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
-                <div className="relative z-10">
-                  <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Geospatial Assignment</h4>
-                  <h3 className="text-3xl font-black uppercase tracking-tight">Operational Zone</h3>
-                </div>
-                <MapPin size={80} className="text-white/10 absolute -right-4 -bottom-4" />
-              </div>
+        {step === 7 && (
+  <div className="space-y-8 animate-slide-in">
+    <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+      <div className="relative z-10">
+        <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Geospatial Assignment</h4>
+        <h3 className="text-3xl font-black uppercase tracking-tight">Operational Zone</h3>
+      </div>
+      <MapPin size={80} className="text-white/10 absolute -right-4 -bottom-4" />
+    </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {OPERATIONAL_ZONES.map((zone) => (
-                  <button
-                    key={zone.name}
-                    onClick={() => setFormData({ ...formData, primaryZone: zone.name })}
-                    className={`p-6 rounded-3xl border-2 text-left transition-all group relative overflow-hidden ${
-                      formData.primaryZone === zone.name
-                        ? 'border-blue-600 bg-blue-50/50 shadow-lg scale-[1.02]'
-                        : 'border-slate-100 hover:border-slate-200 bg-white'
-                    }`}
-                  >
-                    <div className="relative z-10">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className={`p-3 rounded-xl ${formData.primaryZone === zone.name ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                          <Navigation size={24} />
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                          zone.status === 'HIGH' ? 'bg-red-100 text-red-600' :
-                          zone.status === 'OPTIMAL' ? 'bg-emerald-100 text-emerald-600' :
-                          zone.status === 'LOW' ? 'bg-blue-100 text-blue-600' :
-                          'bg-slate-100 text-slate-600'
-                        }`}>
-                          {zone.status} Load
-                        </span>
-                      </div>
-                      
-                      <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-1">{zone.name}</h4>
-                      
-                      <div className="mt-4">
-                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                          <span>Saturation Index</span>
-                          <span>{zone.saturation}%</span>
-                        </div>
-                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full transition-all duration-1000 ${
-                              zone.saturation > 80 ? 'bg-red-500' : 
-                              zone.saturation > 50 ? 'bg-blue-500' : 
-                              'bg-emerald-500'
-                            }`} 
-                            style={{ width: `${zone.saturation}%` }} 
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {COUNTIES.map(county => (
+        <button
+          key={county}
+          onClick={() => setFormData({ ...formData, primaryZone: county })}
+          className={`p-4 rounded-3xl border-2 text-center transition-all ${
+            formData.primaryZone === county
+              ? 'border-blue-600 bg-blue-50/50 shadow-lg scale-[1.02]'
+              : 'border-slate-100 hover:border-slate-200 bg-white'
+          }`}
+        >
+          {county}
+        </button>
+      ))}
+    </div>
+
+    <div className="mt-6">
+      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Sub-County / Specific Area (optional)</label>
+      <input 
+        type="text" 
+        placeholder="Enter sub-county or area" 
+        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+        value={formData.subZone || ''}
+        onChange={e => setFormData({ ...formData, subZone: e.target.value })}
+      />
+    </div>
+  </div>
+)}
 
           {step === 10 && ( 
             <div className="h-full flex flex-col animate-slide-in items-center justify-center py-20">
