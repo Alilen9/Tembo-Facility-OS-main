@@ -11,13 +11,6 @@ import {
 } from 'lucide-react';
 
 
-// Constants
-const SKILLS = ["Electrical", "Plumbing", "HVAC", "Networking", "Mechanical"];
-const STATUS = ["Active", "Inactive"];
-const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract"];
-const GENDERS = ["Male", "Female", "Other"];
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
 const EXPERTISE_DOMAINS = [
   { id: 'plum', label: 'Plumber', def: 'Water systems, drainage, and industrial piping.', icon: <Droplets size={18} /> },
   { id: 'elec', label: 'Electrician', def: 'Grid maintenance, high-voltage wiring, and panels.', icon: <Zap size={18} /> },
@@ -241,7 +234,7 @@ export const EnrollTechnicianPage: React.FC = () => {
 
       {/* Main Content Card */}
       <div className="bg-white border border-slate-200 rounded-3xl shadow-xl min-h-[500px] flex flex-col overflow-hidden">
-        <div className="flex-1 p-10">
+        <div className="flex-1 p-4 md:p-10">
           
           {/* STEP 0: PRE-FLIGHT (Now part of the page) */}
           {step === 0 && (
@@ -275,7 +268,7 @@ export const EnrollTechnicianPage: React.FC = () => {
 
           {step === 1 && (
             <div className="space-y-8 animate-slide-in">
-              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+              <div className="bg-slate-900 text-white p-6 md:p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
                 <div className="relative z-10">
                   <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Traceability Key #1</h4>
                   <h3 className="text-3xl font-black uppercase tracking-tight">Legal Identity</h3>
@@ -285,15 +278,15 @@ export const EnrollTechnicianPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">First Name</label>
-                  <input type="text" placeholder="Sarah" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                  <input type="text" placeholder="Sarah" className="w-full px-4 py-3 md:px-5 md:py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base md:text-lg font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Last Name</label>
-                  <input type="text" placeholder="Miller" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+                  <input type="text" placeholder="Miller" className="w-full px-4 py-3 md:px-5 md:py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base md:text-lg font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">National ID (KYC Verified)</label>
-                  <input type="text" maxLength={8} placeholder="00000000" className={`w-full px-6 py-6 border-2 font-mono font-black text-3xl rounded-3xl transition-all ${duplicateIdError ? 'border-red-500 bg-red-50 text-red-900' : 'border-slate-200 bg-white'}`} value={formData.nationalId} onChange={e => setFormData({...formData, nationalId: e.target.value.replace(/\D/g, '')})} />
+                  <input type="text" maxLength={8} placeholder="00000000" className={`w-full px-4 py-4 md:px-6 md:py-6 border-2 font-mono font-black text-xl md:text-3xl rounded-3xl transition-all ${duplicateIdError ? 'border-red-500 bg-red-50 text-red-900' : 'border-slate-200 bg-white'}`} value={formData.nationalId} onChange={e => setFormData({...formData, nationalId: e.target.value.replace(/\D/g, '')})} />
                   {duplicateIdError && <p className="text-xs text-red-600 font-black mt-2 uppercase tracking-tight">System Conflict: Identification already bound to an active record.</p>}
                 </div>
               </div>
@@ -302,7 +295,7 @@ export const EnrollTechnicianPage: React.FC = () => {
 
           {step === 2 && (
             <div className="space-y-8 animate-slide-in">
-              <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-lg flex justify-between items-center overflow-hidden relative">
+              <div className="bg-blue-600 text-white p-6 md:p-8 rounded-2xl shadow-lg flex justify-between items-center overflow-hidden relative">
                 <div className="relative z-10">
                   <h4 className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Traceability Key #2</h4>
                   <h3 className="text-3xl font-black uppercase tracking-tight">Mobile Communication</h3>
@@ -312,12 +305,12 @@ export const EnrollTechnicianPage: React.FC = () => {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Mobile Auth Key (254...)</label>
-                  <input type="tel" placeholder="254..." className={`w-full px-6 py-5 border-2 font-mono font-black text-2xl rounded-2xl transition-all ${duplicatePhoneError ? 'border-red-500 bg-red-50' : 'border-slate-200 bg-slate-50'}`} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} />
+                  <input type="tel" placeholder="254..." className={`w-full px-4 py-4 md:px-6 md:py-5 border-2 font-mono font-black text-xl md:text-2xl rounded-2xl transition-all ${duplicatePhoneError ? 'border-red-500 bg-red-50' : 'border-slate-200 bg-slate-50'}`} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} />
                   {duplicatePhoneError && <p className="text-xs text-red-600 font-bold mt-2 uppercase tracking-tight">Communication Node already allocated.</p>}
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Primary Email Node</label>
-                  <input type="email" placeholder="sarah.m@tembocare.io" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold outline-none" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                  <input type="email" placeholder="sarah.m@tembocare.io" className="w-full px-4 py-3 md:px-5 md:py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base md:text-lg font-bold outline-none" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                 </div>
               </div>
             </div>
@@ -325,7 +318,7 @@ export const EnrollTechnicianPage: React.FC = () => {
 
           {step === 3 && (
             <div className="space-y-8 animate-slide-in">
-              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+              <div className="bg-slate-900 text-white p-6 md:p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
                 <div className="relative z-10">
                   <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Temporal Binding</h4>
                   <h3 className="text-3xl font-black uppercase tracking-tight">Service Commencement</h3>
@@ -377,7 +370,7 @@ export const EnrollTechnicianPage: React.FC = () => {
 
           {step === 4 && (
             <div className="space-y-6 animate-slide-in">
-              <div className="bg-slate-900 text-white p-8 rounded-2xl flex justify-between items-center overflow-hidden relative">
+              <div className="bg-slate-900 text-white p-6 md:p-8 rounded-2xl flex justify-between items-center overflow-hidden relative">
                 <div className="relative z-10">
                   <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Trade Authorization</h4>
                   <h3 className="text-3xl font-black uppercase tracking-tight">Expertise Domains</h3>
@@ -400,7 +393,7 @@ export const EnrollTechnicianPage: React.FC = () => {
 
           {step === 5 && (
             <div className="space-y-10 animate-slide-in flex flex-col items-center">
-              <div className="bg-slate-900 text-white p-8 rounded-2xl w-full text-center">
+              <div className="bg-slate-900 text-white p-6 md:p-8 rounded-2xl w-full text-center">
                 <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Identity Binding</h4>
                 <h3 className="text-3xl font-black uppercase tracking-tight">Portrait Calibration</h3>
               </div>
@@ -411,7 +404,7 @@ export const EnrollTechnicianPage: React.FC = () => {
                 accept="image/*" 
                 onChange={handlePhotoUpload} 
               />
-              <div className="w-72 h-72 rounded-[40px] border-4 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50 group relative shadow-inner">
+              <div className="w-64 h-64 md:w-72 md:h-72 rounded-[40px] border-4 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50 group relative shadow-inner">
                  {formData.profilePhoto ? (
                    <img src={formData.profilePhoto} className="w-full h-full object-cover" />
                  ) : (
@@ -433,7 +426,7 @@ export const EnrollTechnicianPage: React.FC = () => {
 
           {step === 6 && (
             <div className="space-y-8 animate-slide-in">
-              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+              <div className="bg-slate-900 text-white p-6 md:p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
                 <div className="relative z-10">
                   <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Compliance Layer</h4>
                   <h3 className="text-3xl font-black uppercase tracking-tight">Certification</h3>
@@ -447,7 +440,7 @@ export const EnrollTechnicianPage: React.FC = () => {
                   <input 
                     type="text" 
                     placeholder="LIC-2024-..." 
-                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" 
+                    className="w-full px-4 py-3 md:px-5 md:py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base md:text-lg font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" 
                     value={formData.certNumber} 
                     onChange={e => setFormData({...formData, certNumber: e.target.value})} 
                   />
@@ -456,7 +449,7 @@ export const EnrollTechnicianPage: React.FC = () => {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Expiry Date</label>
                   <input 
                     type="date" 
-                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" 
+                    className="w-full px-4 py-3 md:px-5 md:py-4 bg-slate-50 border border-slate-200 rounded-2xl text-base md:text-lg font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" 
                     value={formData.certExpiry} 
                     onChange={e => setFormData({...formData, certExpiry: e.target.value})} 
                   />
@@ -507,7 +500,7 @@ export const EnrollTechnicianPage: React.FC = () => {
 
           {step === 8 && (
             <div className="space-y-8 animate-slide-in">
-              <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+              <div className="bg-slate-900 text-white p-6 md:p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
                 <div className="relative z-10">
                   <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Final Protocol</h4>
                   <h3 className="text-3xl font-black uppercase tracking-tight">Data Verification</h3>
@@ -577,7 +570,7 @@ export const EnrollTechnicianPage: React.FC = () => {
           {/* Default view for other steps */}
         {step === 7 && (
   <div className="space-y-8 animate-slide-in">
-    <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
+    <div className="bg-slate-900 text-white p-6 md:p-8 rounded-2xl shadow-xl flex justify-between items-center overflow-hidden relative">
       <div className="relative z-10">
         <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Geospatial Assignment</h4>
         <h3 className="text-3xl font-black uppercase tracking-tight">Operational Zone</h3>
@@ -606,7 +599,7 @@ export const EnrollTechnicianPage: React.FC = () => {
       <input 
         type="text" 
         placeholder="Enter sub-county or area" 
-        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+        className="w-full px-4 py-3 md:px-5 md:py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
         value={formData.subZone || ''}
         onChange={e => setFormData({ ...formData, subZone: e.target.value })}
       />
@@ -615,10 +608,10 @@ export const EnrollTechnicianPage: React.FC = () => {
 )}
 
           {step === 10 && ( 
-            <div className="h-full flex flex-col animate-slide-in items-center justify-center py-20">
+            <div className="h-full flex flex-col animate-slide-in items-center justify-center py-10 md:py-20">
               <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.5)] mb-8"><CheckCircle2 size={48} className="text-white" /></div>
               <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter mb-4 text-center">Enrollment Absolute</h2>
-              <div className="bg-slate-50 border border-slate-200 p-8 rounded-[40px] flex items-center gap-8 shadow-sm max-w-xl w-full">
+              <div className="bg-slate-50 border border-slate-200 p-6 md:p-8 rounded-[40px] flex flex-col md:flex-row items-center gap-8 shadow-sm max-w-xl w-full">
                  <img src={formData.profilePhoto} className="w-32 h-32 rounded-3xl object-cover shadow-2xl ring-4 ring-white" />
                  <div className="space-y-2">
                     <span className="text-xs font-black text-slate-400 font-mono tracking-widest uppercase bg-white px-2 py-1 rounded border">ID: TMP-{formData.nationalId.slice(-4)}</span>
@@ -640,9 +633,9 @@ export const EnrollTechnicianPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="mt-12 flex gap-4">
-                 <button onClick={() => { setFormData(INITIAL_FORM_STATE); setStep(0); }} className="px-10 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all">Enroll Next Specialist</button>
-                 <button className="px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">Audit Record</button>
+              <div className="mt-12 flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                 <button onClick={() => { setFormData(INITIAL_FORM_STATE); setStep(0); }} className="w-full md:w-auto px-10 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all">Enroll Next Specialist</button>
+                 <button className="w-full md:w-auto px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">Audit Record</button>
               </div>
             </div>
           )}
@@ -650,18 +643,18 @@ export const EnrollTechnicianPage: React.FC = () => {
 
         {/* Action Footer */}
         {step < 10 && (
-          <div className="p-8 border-t border-slate-100 bg-slate-50 flex justify-between items-center px-10">
+          <div className="p-4 md:p-8 border-t border-slate-100 bg-slate-50 flex flex-col-reverse md:flex-row justify-between items-center gap-4 px-4 md:px-10">
              {step > 0 ? (
-               <button onClick={handleBack} disabled={isFinalizing} className="px-8 py-4 rounded-2xl bg-white border border-slate-200 text-slate-900 font-black text-[11px] uppercase tracking-widest flex items-center gap-3 hover:bg-slate-100 transition-all shadow-sm"><ArrowLeft size={16} /> Previous Stage</button>
+               <button onClick={handleBack} disabled={isFinalizing} className="w-full md:w-auto px-6 py-3 md:px-8 md:py-4 rounded-2xl bg-white border border-slate-200 text-slate-900 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-100 transition-all shadow-sm"><ArrowLeft size={16} /> Previous Stage</button>
              ) : (
-               <div />
+               <div className="hidden md:block" />
              )}
-             <div className="flex gap-4">
-               <button onClick={() => {}} className="px-6 py-4 rounded-2xl text-slate-400 font-black text-[11px] uppercase tracking-widest hover:text-slate-600 transition-colors">Discard Draft</button>
+             <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+               <button onClick={() => {}} className="w-full md:w-auto px-6 py-3 md:py-4 rounded-2xl text-slate-400 font-black text-[11px] uppercase tracking-widest hover:text-slate-600 transition-colors text-center">Discard Draft</button>
                <button 
                   onClick={step === 8 ? finalizeOnboarding : handleNext}
                   disabled={!isStepValid() || isFinalizing}
-                  className={`px-10 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-xl flex items-center gap-3 ${
+                  className={`w-full md:w-auto px-6 py-3 md:px-10 md:py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3 ${
                     !isStepValid() || isFinalizing ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
                   }`}
                >

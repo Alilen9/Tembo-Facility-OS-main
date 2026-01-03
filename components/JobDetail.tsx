@@ -45,7 +45,7 @@ export const JobDetail: React.FC<{ job: Job; onClose: () => void; onUpdateJob: (
 
   return (
     <div className="h-full flex flex-col bg-white border-l border-slate-200 shadow-2xl overflow-hidden relative">
-      <div className="px-6 py-5 border-b border-slate-200 flex items-start justify-between bg-white shrink-0">
+      <div className="px-4 py-4 md:px-6 md:py-5 border-b border-slate-200 flex items-start justify-between bg-white shrink-0">
         <div>
           <div className="flex items-center gap-3">
              <span className="text-xl font-bold text-slate-900">Ticket #{job.id}</span>
@@ -56,7 +56,7 @@ export const JobDetail: React.FC<{ job: Job; onClose: () => void; onUpdateJob: (
         <button onClick={onClose} className="text-slate-400 hover:text-slate-800 p-1 rounded hover:bg-slate-100 transition-colors"><X size={20} /></button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
         {/* CRITICAL BLOCKERS (Action-Oriented) */}
         {/* Fix: Changed 'isBreach' to 'isBreached' to match the variable definition on line 13 */}
         {isBreached && (
@@ -80,8 +80,8 @@ export const JobDetail: React.FC<{ job: Job; onClose: () => void; onUpdateJob: (
       </div>
       
       {!isCompleted && (
-        <div className="p-5 border-t border-slate-200 bg-white shrink-0">
-          <div className="flex space-x-3">
+        <div className="p-4 md:p-5 border-t border-slate-200 bg-white shrink-0">
+          <div className="flex flex-col md:flex-row gap-3">
             <button 
               onClick={handleBroadcastNudge}
               disabled={isNudging}

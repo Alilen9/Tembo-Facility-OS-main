@@ -57,10 +57,10 @@ export const YieldLedger: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       {/* HEADER */}
       <div>
-        <h2 className="text-2xl font-bold">Yield Ledger</h2>
+        <h2 className="text-xl md:text-2xl font-bold">Yield Ledger</h2>
         <p className="text-gray-500 text-sm">
           Review, approve and track operational revenue
         </p>
@@ -86,12 +86,12 @@ export const YieldLedger: React.FC = () => {
       </div>
 
       {/* FILTER */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 overflow-x-auto pb-2 md:pb-0 md:flex-wrap">
         {['ALL', 'PENDING', 'APPROVED', 'FLAGGED'].map(s => (
           <button
             key={s}
             onClick={() => setFilter(s as any)}
-            className={`px-4 py-2 rounded-md text-sm font-medium border
+            className={`px-4 py-2 rounded-md text-sm font-medium border whitespace-nowrap
               ${filter === s
                 ? 'bg-black text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'}
@@ -104,7 +104,7 @@ export const YieldLedger: React.FC = () => {
 
       {/* TABLE */}
       <div className="overflow-x-auto border rounded-lg">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[800px]">
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-3">Job</th>

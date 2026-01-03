@@ -45,5 +45,15 @@ export const clientService = {
   sendNudge: async (jobId: string) => {
     const response = await apiClient.post(`/client/jobs/${jobId}/nudge`);
     return response.data;
+  },
+
+  getTickets: async (jobId: string) => {
+    const response = await apiClient.get('/client/tickets', { params: { jobId } });
+    return response.data;
+  },
+
+  createTicket: async (data: { title: string; description: string; type: string; jobId: string }) => {
+    const response = await apiClient.post('/client/tickets', data);
+    return response.data;
   }
 };

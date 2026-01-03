@@ -55,7 +55,6 @@ export const ClientRequests: React.FC<WorkOrderListProps> = ({ onSelectJob, sele
       setLoading(true);
       try {
         const data = await clientService.getJobs(page, 10, searchQuery);
-        console.log("Jobs Data: ", data);
         setJobs(data.jobs || []);
         setTotalPages(data.totalPages || 1);
       } catch (err) {

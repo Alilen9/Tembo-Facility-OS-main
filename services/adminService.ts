@@ -44,5 +44,21 @@ export const adminService = {
     await new Promise(resolve => setTimeout(resolve, 500));
     const EXISTING_IDS = ['12345678', '87654321'];
     return EXISTING_IDS.includes(id);
+  },
+
+  getMessages: async (): Promise<any[]> => {
+    const response = await apiClient.get('/admin/messages');
+    return response.data;
+  },
+
+  replyToMessage: async (id: string, message: string) => {
+    const response = await apiClient.post(`/admin/messages/${id}/reply`, { message });
+    return response.data;
+  },
+
+  resolveTicket: async (id: string) => {
+    const response = await apiClient.put(`/admin/messages/${id}/resolve`);
+    return response.data;
   }
 };
+  
