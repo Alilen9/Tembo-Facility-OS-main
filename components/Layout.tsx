@@ -37,7 +37,8 @@ export type TabKey =
   | 'technician-upgrades'
   | 'yield-ledger'
   | 'admin-chat'
-  | 'ops-apartments';
+  | 'ops-apartments'
+  | 'job-report';
 
 
 interface LayoutProps {
@@ -164,6 +165,12 @@ export const Layout: React.FC<LayoutProps> = ({
                   label="Billing"
                   active={activeTab === 'billing'}
                   onClick={() => onNavigate('billing')}
+                />
+                <SidebarItem
+                  icon={<Box size={18} />}
+                  label="JobReport"
+                  active={activeTab === 'job-report'}
+                  onClick={() => onNavigate('job-report')}
                 />
                 <SidebarItem
                   icon={<Box size={18} />}
