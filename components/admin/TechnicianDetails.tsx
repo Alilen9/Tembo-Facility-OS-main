@@ -43,34 +43,75 @@ export const TechnicianDetails: React.FC<TechnicianDetailsProps> = ({
           </div>
         </div>
 
-        <div className="mt-8">
-          <h3 className="text-lg font-bold text-gray-700 border-b pb-2">
-            Details
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            <div>
-              <p className="text-sm text-gray-500">Phone</p>
-              <p className="font-semibold">{technician.phone || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="font-semibold">{technician.email || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Skills</p>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {technician.skills?.map(skill => (
-                  <span
-                    key={skill}
-                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="mt-8">
+  <h3 className="text-lg font-bold text-gray-700 border-b pb-2">
+    Personal & Registration Details
+  </h3>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+    <div>
+      <p className="text-sm text-gray-500">First Name</p>
+      <p className="font-semibold">{technician.firstName || 'N/A'}</p>
+    </div>
+
+    <div>
+      <p className="text-sm text-gray-500">Last Name</p>
+      <p className="font-semibold">{technician.lastName || 'N/A'}</p>
+    </div>
+
+    <div>
+      <p className="text-sm text-gray-500">National ID</p>
+      <p className="font-semibold">{technician.nationalId || 'N/A'}</p>
+    </div>
+
+    <div>
+      <p className="text-sm text-gray-500">Phone</p>
+      <p className="font-semibold">{technician.phone || 'N/A'}</p>
+    </div>
+
+    <div>
+      <p className="text-sm text-gray-500">Email</p>
+      <p className="font-semibold">{technician.email || 'N/A'}</p>
+    </div>
+
+    <div>
+      <p className="text-sm text-gray-500">County</p>
+      <p className="font-semibold">{technician.county || 'N/A'}</p>
+    </div>
+
+    <div>
+      <p className="text-sm text-gray-500">Sub-county</p>
+      <p className="font-semibold">{technician.subCounty || 'N/A'}</p>
+    </div>
+
+    <div>
+      <p className="text-sm text-gray-500">Initiation Month</p>
+      <p className="font-semibold">{technician.initiationMonth || 'N/A'}</p>
+    </div>
+
+    <div>
+      <p className="text-sm text-gray-500">Fiscal Month</p>
+      <p className="font-semibold">{technician.fiscalMonth || 'N/A'}</p>
+    </div>
+
+    <div>
+      <p className="text-sm text-gray-500">Licence / Certificate ID</p>
+      <p className="font-semibold">
+        {technician.licenseId || technician.certificateId || 'N/A'}
+      </p>
+    </div>
+
+    <div>
+      <p className="text-sm text-gray-500">Licence Expiry Date</p>
+      <p className="font-semibold">
+        {technician.licenseExpiryDate
+          ? new Date(technician.licenseExpiryDate).toLocaleDateString()
+          : 'N/A'}
+      </p>
+    </div>
+  </div>
+</div>
+
 
         <div className="mt-8">
           <h3 className="text-lg font-bold text-gray-700 border-b pb-2">
