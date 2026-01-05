@@ -327,6 +327,62 @@ export const QualityControlView: React.FC = () => {
                     ) : <span className="text-xs text-slate-400 italic">None Recorded</span>}
                  </div>
               </div>
+
+              {/* Technician → Client Feedback */}
+<div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+    <Star size={14} /> Technician Feedback on Client
+  </h3>
+
+  {/* Rating */}
+  <div className="flex items-center gap-3 mb-3">
+    <span className="text-sm font-bold text-slate-600">Client Rating</span>
+    {selectedJob.techRating ? (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map(i => (
+          <Star
+            key={i}
+            size={16}
+            className={
+              i <= selectedJob.techRating
+                ? 'text-yellow-400 fill-yellow-400'
+                : 'text-slate-300'
+            }
+          />
+        ))}
+        <span className="text-xs font-bold text-slate-500 ml-2">
+          {selectedJob.techRating}/5
+        </span>
+      </div>
+    ) : (
+      <span className="text-xs italic text-slate-400">
+        Technician did not rate the client
+      </span>
+    )}
+  </div>
+
+  {/* Feedback Text */}
+  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 leading-relaxed">
+    {selectedJob.techFeedback ? (
+      selectedJob.techFeedback
+    ) : (
+      <span className="italic text-slate-400">
+        No written feedback provided by technician.
+      </span>
+    )}
+  </div>
+
+  {/* Audit Insight */}
+  {selectedJob.techRating && selectedJob.techRating <= 2 && (
+    <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-xs font-medium">
+      <AlertTriangle size={16} className="mt-0.5" />
+      <span>
+        Low client rating — review for possible customer behavior issues or disputes.
+      </span>
+    </div>
+  )}
+</div>
+
            </section>
 
         </div>
