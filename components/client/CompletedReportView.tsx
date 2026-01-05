@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Job, Technician, UserRole } from '../types';
-import { Star, Download, FileText, CheckCircle2, Wrench, Package, Shield, ClipboardList, Camera } from './Icons';
-import { useAuth } from './AuthContext';
-import { MOCK_CUSTOMERS } from '../constants';
+import { Job, Technician, UserRole } from '../../types';
+import { Star, Download, FileText, CheckCircle2, Wrench, Package, Shield, ClipboardList, Camera } from '../Icons';
+import { useAuth } from '../AuthContext';
 
 interface CompletedReportViewProps {
   job: Job;
@@ -15,7 +14,25 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
 
   const isTechnician = user?.role === UserRole.TECHNICIAN;
   const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
-  const clientName = MOCK_CUSTOMERS.find(c => c.id === job.customerId)?.name || "the client";
+  const clientName = (job as any).customerName || "the client";
+
+  console.log('Rendering CompletedReportView for job:', job);
+
+  // Extract before/after images from the timeline
+  const proofImages = React.useMemo(() => {
+    const images: { before?: string; after?: string } = {};
+    if (job.timeline && Array.isArray(job.timeline)) {
+      job.timeline.forEach((event: any) => {
+        if (event.evidenceType === 'BEFORE' && event.evidenceUrl) {
+          images.before = event.evidenceUrl;
+        }
+        if (event.evidenceType === 'AFTER' && event.evidenceUrl) {
+          images.after = event.evidenceUrl;
+        }
+      });
+    }
+    return images;
+  }, [job.timeline]);
 
   return (
     <div className="space-y-8 animate-slide-in pb-10">
@@ -63,12 +80,12 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
           <Camera size={18} className="text-slate-400" />
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Photographic Evidence</h3>
         </div>
-        {job.proofImages ? (
+        {proofImages.before || proofImages.after ? (
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <span className="text-xs font-bold text-slate-500 pl-1 uppercase">Before</span>
               <div className="aspect-video rounded-xl bg-slate-100 border border-slate-200 overflow-hidden relative group shadow-sm">
-                <img src={job.proofImages.before} alt="Before" className="w-full h-full object-cover" />
+                {proofImages.before ? <img src={proofImages.before} alt="Before" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400 italic">Not provided</div>}
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                    <button className="text-white text-xs font-bold border border-white px-3 py-1.5 rounded hover:bg-white/20">Expand</button>
                 </div>
@@ -77,7 +94,7 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
             <div className="space-y-2">
               <span className="text-xs font-bold text-slate-500 pl-1 uppercase">After</span>
               <div className="aspect-video rounded-xl bg-slate-100 border border-slate-200 overflow-hidden relative group shadow-sm">
-                <img src={job.proofImages.after} alt="After" className="w-full h-full object-cover" />
+                {proofImages.after ? <img src={proofImages.after} alt="After" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400 italic">Not provided</div>}
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                    <button className="text-white text-xs font-bold border border-white px-3 py-1.5 rounded hover:bg-white/20">Expand</button>
                 </div>

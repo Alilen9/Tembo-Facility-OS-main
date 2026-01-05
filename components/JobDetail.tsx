@@ -4,7 +4,7 @@ import { Job, JobStatus, JobPriority } from '../types';
 import { clientService } from '../services/clientService';
 import { X, AlertTriangle, MessageSquare, Phone, Activity, Clock } from './Icons';
 import { JobTrackingView } from './JobTrackingView';
-import { CompletedReportView } from './CompletedReportView';
+import { CompletedReportView } from './client/CompletedReportView';
 
 interface ExtendedJob extends Job {
   customerName?: string;

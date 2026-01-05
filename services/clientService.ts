@@ -65,5 +65,15 @@ export const clientService = {
   searchApartments: async (search: string) => {
     const response = await apiClient.get('/client/apartments', { params: { search } });
     return response.data;
+  },
+
+  getJobReport: async (jobId: string) => {
+    const response = await apiClient.get(`/client/jobs/${jobId}/report`);
+    return response.data;
+  },
+
+  submitJobRating: async (jobId: string, rating: number, feedback?: string) => {
+    const response = await apiClient.post(`/client/jobs/${jobId}/rate`, { rating, feedback });
+    return response.data;
   }
 };

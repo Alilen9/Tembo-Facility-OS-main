@@ -1,4 +1,3 @@
-import { MOCK_CUSTOMERS } from '@/constants';
 import { Job, ServiceTarget, UserRole, JobStatus, BillingStatus, HoldReason, TimeRange, INITIAL_SERVICE_TARGETS } from '@/types';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
@@ -77,7 +76,7 @@ export const RevenueIntelligenceView: React.FC<{ onIntervene?: (jobId: string) =
   // --- LEDGER LOGIC ---
   const breakdownData = useMemo(() => {
     let data = baseFilteredJobs.map(j => {
-        const client = (j as any).customerName || MOCK_CUSTOMERS.find(c => c.id === j.customerId)?.name || 'Unknown';
+        const client = (j as any).customerName || 'Unknown';
         const revStatus = j.billingStatus === BillingStatus.INVOICED ? 'Completed' : j.billingStatus === BillingStatus.PENDING ? 'On Hold' : 'Unbilled';
         return { ...j, client, revStatus, liquidityGrade: (j.holdReason === HoldReason.PENDING_CLIENT_SIGN || j.holdReason === HoldReason.MISSING_EVIDENCE) ? 'A' : 'B' };
     });
