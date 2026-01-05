@@ -4,6 +4,7 @@ import { adminService } from '../../services/adminService';
 import { toast } from 'react-hot-toast';
 import { Clock, Search, MoreHorizontal, AlertTriangle, Zap, Thermometer, Droplets, Hammer, Shield, SprayCan, ArrowRight, UserCheck, Bell, MapPin, Camera, MessageSquare, Activity, List, ChevronRight } from '../Icons';
 import RequestDetailsPage from './RequestDetailsPage';
+import AdminReviewPage from './AdminReviewPage';
 
 const getCategoryIcon = (category?: string) => {
   switch (category?.toLowerCase()) {
@@ -58,6 +59,7 @@ export const AdminDispatchConsole: React.FC<{
   const [technicians, setTechnicians] = useState<(User & { status: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [reviewJob, setReviewJob] = useState<Job | null>(null);
 
   const fetchData = async () => {
     try {
@@ -120,6 +122,41 @@ export const AdminDispatchConsole: React.FC<{
           timeAvailable: selectedJob.preferredTime || 'N/A',
         }}
         onBack={() => setSelectedJob(null)}
+      />
+    );
+  }
+
+  if (reviewJob) {
+    // Extract images from timeline for the report
+    const proofImages: { before: string; after: string } = { before: '', after: '' };
+    if (reviewJob.timeline && Array.isArray(reviewJob.timeline)) {
+      reviewJob.timeline.forEach((event: any) => {
+        if (event.evidenceType === 'BEFORE' && event.evidenceUrl) proofImages.before = event.evidenceUrl;
+        if (event.evidenceType === 'AFTER' && event.evidenceUrl) proofImages.after = event.evidenceUrl;
+      });
+    }
+
+    const technician = technicians.find(t => t.id === reviewJob.technicianId);
+
+    return (
+      <AdminReviewPage
+        report={{
+          ticketNumber: `#${reviewJob.id}`,
+          jobId: reviewJob.id,
+          category: reviewJob.category,
+          completedAt: reviewJob.status === JobStatus.COMPLETED 
+            ? new Date(reviewJob.timeline?.find((e: any) => e.status === 'Job Completed')?.timestamp || Date.now()).toLocaleDateString() 
+            : 'Pending Completion',
+          technicianName: technician?.name || 'Unassigned',
+          clientName: (reviewJob as any).customerName || 'Unknown Client',
+          workSummary: reviewJob.description || 'No summary available.',
+          proofImages: (proofImages.before || proofImages.after) ? proofImages : undefined,
+          materialsUsed: [], // Not available in dispatch view data
+          complianceDocs: [],
+          rating: reviewJob.userRating,
+          feedback: reviewJob.userFeedback
+        }}
+        onBack={() => setReviewJob(null)}
       />
     );
   }
@@ -196,7 +233,10 @@ export const AdminDispatchConsole: React.FC<{
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                       <button className="text-slate-400 hover:text-slate-600"><MoreHorizontal size={18} /></button>
+                       <button onClick={(e) => {
+                         e.stopPropagation();
+                         setReviewJob(job);
+                       }} className="text-slate-400 hover:text-slate-600"><MoreHorizontal size={18} /></button>
                     </td>
                   </tr>
                 ))}
@@ -215,7 +255,10 @@ export const AdminDispatchConsole: React.FC<{
                       <span className="text-xs font-bold text-slate-500">#{job.id}</span>
                       <SLACountdown deadline={job.slaDeadline} status={job.status} />
                     </div>
-                    <button onClick={(e) => e.stopPropagation()} className="text-slate-400"><MoreHorizontal size={18} /></button>
+                    <button onClick={(e) => {
+                      e.stopPropagation();
+                      setReviewJob(job);
+                    }} className="text-slate-400"><MoreHorizontal size={18} /></button>
                   </div>
                   
                   <div className="flex items-start gap-3 mb-3">

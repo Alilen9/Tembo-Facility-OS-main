@@ -205,10 +205,24 @@ const AdminChatPage: React.FC = () => {
                 : 'bg-white hover:bg-slate-100'
             }`}
           >
-            <p className="font-medium">{client.clientName}</p>
-            <p className="text-xs opacity-70 truncate">
-              {client.messages.at(-1)?.content}
-             </p>
+            <div className="flex justify-between items-center mb-1">
+              <p className="font-medium truncate">{client.clientName}</p>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 ${
+                activeClientId === client.clientId 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-slate-100 text-slate-600'
+              }`}>
+                {client.messages.length}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <p className="text-xs opacity-70 truncate flex-1">
+                {client.messages.at(-1)?.content}
+              </p>
+              {client.status === 'RESOLVED' && (
+                <CheckCircle size={14} className={`ml-2 ${activeClientId === client.clientId ? 'text-white' : 'text-emerald-500'}`} />
+              )}
+            </div>
           </button>
         ))}
       </div>

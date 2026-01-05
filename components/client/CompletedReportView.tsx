@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Job, Technician, UserRole } from '../../types';
 import { Star, Download, FileText, CheckCircle2, Wrench, Package, Shield, ClipboardList, Camera } from '../Icons';
 import { useAuth } from '../AuthContext';
+import { clientService } from '../../services/clientService';
+import toast from 'react-hot-toast';
 
 interface CompletedReportViewProps {
   job: Job;
@@ -11,6 +13,8 @@ interface CompletedReportViewProps {
 export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, technician }) => {
   const { user } = useAuth();
   const [rating, setRating] = useState(job.userRating || 0);
+  const [feedback, setFeedback] = useState(user?.role === UserRole.TECHNICIAN ? (job as any).techFeedback || '' : (job as any).userFeedback || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isTechnician = user?.role === UserRole.TECHNICIAN;
   const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
@@ -33,6 +37,24 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
     }
     return images;
   }, [job.timeline]);
+
+  const handleSubmitReview = async () => {
+    if (rating === 0) {
+      toast.error('Please select a rating');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await clientService.submitJobRating(job.id, rating, feedback);
+      toast.success('Review submitted successfully');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to submit review');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="space-y-8 animate-slide-in pb-10">
@@ -220,10 +242,15 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
               placeholder={isTechnician ? "Comments on site access, client behavior, etc..." : "Tell us more about the service (optional)..."}
               className="w-full text-sm p-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-slate-500"
               rows={3}
-              defaultValue={isTechnician ? job.techFeedback : job.userFeedback}
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
             ></textarea>
-            <button className="mt-4 w-full bg-blue-600 text-white text-sm font-bold py-3 rounded-lg hover:bg-blue-500 transition-colors shadow-lg">
-              Submit Review
+            <button 
+              onClick={handleSubmitReview}
+              disabled={isSubmitting}
+              className="mt-4 w-full bg-blue-600 text-white text-sm font-bold py-3 rounded-lg hover:bg-blue-500 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Review'}
             </button>
           </div>
         </section>

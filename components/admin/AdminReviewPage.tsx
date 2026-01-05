@@ -1,5 +1,5 @@
 import React from "react";
-import { Camera, ClipboardList, Download, Package, Shield, Star } from "../Icons";
+import { Camera, ClipboardList, Download, Package, Shield, Star, ArrowLeft } from "../Icons";
 
 
 type Material = {
@@ -31,13 +31,20 @@ type ReviewReport = {
 
 type Props = {
   report: ReviewReport;
+  onBack: () => void;
 };
 
-const AdminReviewPage: React.FC<Props> = ({ report }) => {
+const AdminReviewPage: React.FC<Props> = ({ report, onBack }) => {
   return (
     <div className="p-8 max-w-5xl mx-auto font-sans bg-gray-50 space-y-8">
       {/* Header */}
       <div className="border-b border-gray-200 pb-4">
+        <button
+          onClick={onBack}
+          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-2 mb-4"
+        >
+          <ArrowLeft size={16} /> Back to Console
+        </button>
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <ClipboardList size={24} className="text-blue-600" /> Job Review
         </h2>
@@ -140,20 +147,26 @@ const AdminReviewPage: React.FC<Props> = ({ report }) => {
       {/* Rating & Feedback */}
       <section className="bg-white p-5 rounded-xl shadow-sm text-center">
         <h3 className="text-sm font-bold text-gray-500 uppercase mb-2">Rating</h3>
-        <div className="flex justify-center space-x-2 mb-3">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star
-              key={star}
-              size={28}
-              fill={report.rating && report.rating >= star ? "currentColor" : "none"}
-              className={`text-yellow-400 ${!report.rating ? "text-gray-300" : ""}`}
-            />
-          ))}
-        </div>
-        {report.feedback && <p className="text-gray-700">{report.feedback}</p>}
+        {report.rating && report.rating > 0 ? (
+          <>
+            <div className="flex justify-center space-x-2 mb-3">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  size={28}
+                  className={`text-yellow-400 ${report.rating && report.rating >= star ? 'fill-current' : ''}`}
+                />
+              ))}
+            </div>
+            {report.feedback && <p className="text-gray-700 italic">"{report.feedback}"</p>}
+          </>
+        ) : (
+          <p className="text-gray-400 italic">No rating submitted by client yet.</p>
+        )}
       </section>
     </div>
   );
 };
 
 export default AdminReviewPage;
+
