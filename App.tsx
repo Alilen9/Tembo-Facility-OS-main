@@ -31,7 +31,8 @@ import { EnrollTechnicianPage } from './components/admin/EnrollTechnicianPage';
 import { TechnicianUpgradePage } from './components/ClientUpgradePage';
 import AdminChatPage from './components/admin/AdminChatPage';
 import OpsApartmentsPage from './components/admin/OpsApartmentsPage';
-import JobReport from './components/client/JobReport';
+import { TechniciansPage } from './components/admin/TechniciansPage';
+
 
 
 
@@ -49,7 +50,8 @@ type Tab =
   | 'yield-ledger'
   | 'admin-chat'
   | 'ops-apartments'
-  | 'job-report';
+  | 'technicians';
+  
   
 
 
@@ -215,36 +217,13 @@ const AuthenticatedApp: React.FC = () => {
         {activeTab === 'quality-control' && <QualityControlView />}
 
         {activeTab === 'enroll-technician' && <EnrollTechnicianPage />}
+         {activeTab === 'technicians' && <TechniciansPage />}
       
         {activeTab === 'admin-chat' && <AdminChatPage />}
 
         {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
         {activeTab === 'yield-ledger' && <YieldLedger />}
-         {activeTab === 'job-report' && (
-  <JobReport
-    reportId="JOB123" // the ID of the report
-    clientId="CLIENT456"
-    fetchReport={async (id) => {
-      // fetch from backend or return dummy data
-      return {
-        ticketNumber: 'TICKET001',
-        jobId: 'JOB123',
-        category: 'Plumbing',
-        completedAt: '2026-01-05',
-        technician: { name: 'John Doe', id: 'TECH001' },
-        workSummary: { findings: 'Leak found', actionsTaken: 'Replaced pipe', completionNotes: 'Fixed successfully' },
-        materials: [],
-        complianceDocs: [],
-        images: ['https://via.placeholder.com/220'],
-        approvedBy: 'Manager1',
-      };
-    }}
-    submitRating={async (data) => {
-      console.log('Rating submitted:', data);
-    }}
-  />
-)}
-
+        
 
         
 

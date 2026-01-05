@@ -38,7 +38,10 @@ export type TabKey =
   | 'yield-ledger'
   | 'admin-chat'
   | 'ops-apartments'
-  | 'job-report';
+  | 'technicians';
+
+
+
 
 
 interface LayoutProps {
@@ -166,12 +169,7 @@ export const Layout: React.FC<LayoutProps> = ({
                   active={activeTab === 'billing'}
                   onClick={() => onNavigate('billing')}
                 />
-                <SidebarItem
-                  icon={<Box size={18} />}
-                  label="JobReport"
-                  active={activeTab === 'job-report'}
-                  onClick={() => onNavigate('job-report')}
-                />
+               
                 <SidebarItem
                   icon={<Box size={18} />}
                   label="Billing Report"
@@ -219,6 +217,13 @@ export const Layout: React.FC<LayoutProps> = ({
                   active={activeTab === 'ops-apartments'}
                   onClick={() => onNavigate('ops-apartments')}
                 />
+
+                <SidebarItem
+  icon={<Users size={18} />}
+  label="Technicians"
+  active={activeTab === 'technicians'}
+  onClick={() => onNavigate('technicians')}
+/>
                 <SidebarItem
                   icon={<MessageSquare size={18} />}
                   label="Admin Chat"

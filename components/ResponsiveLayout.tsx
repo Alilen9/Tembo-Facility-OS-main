@@ -7,7 +7,7 @@ import {
   Building2,
   MessageSquare
 } from 'lucide-react';
-import { Briefcase } from './Icons';
+import { Briefcase, Users } from './Icons';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -33,7 +33,9 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({ children, activeTab, o
     { id: 'billing', label: 'Billing', icon: CreditCard, roles: [UserRole.CLIENT] },
     { id: 'admin-chat', label: 'Client Chat', icon: MessageSquare, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
     { id: 'ops-apartments', label: 'Apartments', icon: Building2, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
-    { id: 'job-report', label: 'JobReport', icon: Building2, roles: [UserRole.CLIENT] },
+     { id: 'technicians', label: 'Technicians', icon: Users, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+   
+   
 
   ];
 
