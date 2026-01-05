@@ -3,6 +3,7 @@ import { Job, JobPriority, JobStatus, User } from '../../types';
 import { adminService } from '../../services/adminService';
 import { toast } from 'react-hot-toast';
 import { Clock, Search, MoreHorizontal, AlertTriangle, Zap, Thermometer, Droplets, Hammer, Shield, SprayCan, ArrowRight, UserCheck, Bell, MapPin, Camera, MessageSquare, Activity, List, ChevronRight } from '../Icons';
+import RequestDetailsPage from './RequestDetailsPage';
 
 const getCategoryIcon = (category?: string) => {
   switch (category?.toLowerCase()) {
@@ -56,6 +57,7 @@ export const AdminDispatchConsole: React.FC<{
   const [jobs, setJobs] = useState<Job[]>([]);
   const [technicians, setTechnicians] = useState<(User & { status: string })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   const fetchData = async () => {
     try {
@@ -105,6 +107,23 @@ export const AdminDispatchConsole: React.FC<{
     return <div className="flex items-center justify-center h-full text-slate-400">Loading dispatch console...</div>;
   }
 
+  if (selectedJob) {
+    return (
+      <RequestDetailsPage
+        request={{
+          ticketNumber: selectedJob.id,
+          clientName: (selectedJob as any).customerName || 'Unknown',
+          category: selectedJob.category,
+          issueTitle: selectedJob.title,
+          description: selectedJob.description,
+          urgency: selectedJob.priority,
+          timeAvailable: selectedJob.preferredTime || 'N/A',
+        }}
+        onBack={() => setSelectedJob(null)}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 md:-m-6 bg-slate-50">
       <div className="bg-white border-b border-slate-200 px-4 py-4 md:px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm z-20 shrink-0">
@@ -137,7 +156,7 @@ export const AdminDispatchConsole: React.FC<{
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {queueData.map(job => (
-                  <tr key={job.id} className="group hover:bg-slate-50 relative">
+                  <tr key={job.id} onClick={() => setSelectedJob(job)} className="group hover:bg-slate-50 relative cursor-pointer">
                     <td className="relative w-1"><PriorityStrip priority={job.priority} /></td>
                     <td className="px-6 py-4"><SLACountdown deadline={job.slaDeadline} status={job.status} /></td>
                     <td className="px-6 py-4">
@@ -188,7 +207,7 @@ export const AdminDispatchConsole: React.FC<{
           {/* Mobile List View */}
           <div className="md:hidden space-y-4">
             {queueData.map(job => (
-              <div key={job.id} className="bg-white border border-slate-200 rounded-xl relative overflow-hidden shadow-sm">
+              <div key={job.id} onClick={() => setSelectedJob(job)} className="bg-white border border-slate-200 rounded-xl relative overflow-hidden shadow-sm cursor-pointer">
                 <PriorityStrip priority={job.priority} />
                 <div className="pl-4 p-4">
                   <div className="flex justify-between items-start mb-2">
@@ -196,7 +215,7 @@ export const AdminDispatchConsole: React.FC<{
                       <span className="text-xs font-bold text-slate-500">#{job.id}</span>
                       <SLACountdown deadline={job.slaDeadline} status={job.status} />
                     </div>
-                    <button className="text-slate-400"><MoreHorizontal size={18} /></button>
+                    <button onClick={(e) => e.stopPropagation()} className="text-slate-400"><MoreHorizontal size={18} /></button>
                   </div>
                   
                   <div className="flex items-start gap-3 mb-3">
@@ -222,7 +241,10 @@ export const AdminDispatchConsole: React.FC<{
                       <div className="flex flex-col gap-2">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold text-slate-400 uppercase">Top Match</span>
-                            <button onClick={() => onDispatchClick(job)} className="text-[10px] font-bold text-blue-600 flex items-center gap-1">
+                            <button onClick={(e) => {
+                              e.stopPropagation();
+                              onDispatchClick(job);
+                            }} className="text-[10px] font-bold text-blue-600 flex items-center gap-1">
                               Full List <ChevronRight size={12} />
                             </button>
                           </div>
@@ -230,7 +252,10 @@ export const AdminDispatchConsole: React.FC<{
                             {technicians.filter(t => t.status === 'Available').slice(0, 3).map(tech => (
                               <button 
                                 key={tech.id}
-                                onClick={() => handleAssign(job.id, tech.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAssign(job.id, tech.id);
+                                }}
                                 className="flex-shrink-0 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold text-slate-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all"
                               >
                                 Assign {tech.name.split(' ')[0]}

@@ -7,11 +7,11 @@ import React from "react";
 type Request = {
   ticketNumber: string;
   clientName: string;
-  category: "Plumber" | "Building" | "Apartment";
+  category: string;
   apartmentName?: string; // only if category is Apartment
   issueTitle: string;
   description: string;
-  urgency: "Low" | "Medium" | "High";
+  urgency: string;
   timeAvailable: string;
   images?: string[]; // URLs of uploaded images
 };
