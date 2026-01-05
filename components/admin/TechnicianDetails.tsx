@@ -13,68 +13,91 @@ export const TechnicianDetails: React.FC<Props> = ({ technician, onBack, onUpdat
 
   const saveChanges = async () => {
     setSaving(true);
-
-    // fake API call, replace with your service
+    // Fake API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-
     setSaving(false);
     onUpdated(form);
-    alert('Technician updated');
+    alert('Technician updated!');
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <button onClick={onBack} className="text-sm text-slate-500">
+    <div className="p-6 max-w-5xl mx-auto space-y-6">
+      {/* Back Button */}
+      <button
+        onClick={onBack}
+        className="flex items-center text-sm text-gray-500 hover:text-gray-700 transition"
+      >
         ← Back to technicians
       </button>
 
-      <div className="bg-white border rounded-3xl p-8 shadow">
+      {/* Card */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-md p-8 space-y-6">
+        {/* Header */}
         <div className="flex items-center gap-6">
           <img
             src={form.avatarUrl || 'https://via.placeholder.com/120'}
-            className="w-28 h-28 rounded-3xl object-cover"
+            alt={form.name}
+            className="w-28 h-28 rounded-full object-cover border-2 border-gray-200"
           />
           <div>
-            <h2 className="text-3xl font-black uppercase">{form.name}</h2>
-            <p className="text-sm text-slate-500">{form.status}</p>
+            <h2 className="text-3xl font-bold">{form.name}</h2>
+            <p className="text-gray-500 mt-1">{form.status}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          <input
-            className="input"
-            value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
-            placeholder="Name"
-          />
-          <input
-            className="input"
-            value={form.phone || ''}
-            onChange={e => setForm({ ...form, phone: e.target.value })}
-            placeholder="Phone"
-          />
+        {/* Form */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">
+              Name
+            </label>
+            <input
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">
+              Phone
+            </label>
+            <input
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={form.phone || ''}
+              onChange={e => setForm({ ...form, phone: e.target.value })}
+            />
+          </div>
         </div>
 
-        <div className="mt-6">
-          <p className="text-xs font-black uppercase text-slate-400 mb-2">Skills</p>
+        {/* Skills */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase mb-2">Skills</p>
           <div className="flex flex-wrap gap-2">
             {form.skills.map(skill => (
-              <span key={skill} className="px-3 py-1 bg-slate-100 rounded-lg text-xs font-bold">
+              <span
+                key={skill}
+                className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold"
+              >
                 {skill}
               </span>
             ))}
           </div>
         </div>
 
-        <div className="flex gap-4 mt-8">
+        {/* Actions */}
+        <div className="flex gap-4 mt-6">
           <button
             onClick={saveChanges}
             disabled={saving}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-black uppercase"
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold uppercase hover:bg-blue-700 transition"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
-          <button onClick={onBack} className="px-6 py-3 bg-slate-100 rounded-xl font-black uppercase">
+          <button
+            onClick={onBack}
+            className="px-6 py-3 bg-gray-100 rounded-xl font-bold uppercase hover:bg-gray-200 transition"
+          >
             Cancel
           </button>
         </div>
