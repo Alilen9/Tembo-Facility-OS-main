@@ -121,7 +121,6 @@ export interface Job {
   auditDate?: string;
   auditDefects?: string[];
   auditNotes?: string;
-  location?: string;
 }
 
 export interface Technician {
@@ -133,6 +132,7 @@ export interface Technician {
   phone?: string;
   auditPassRate?: number;
   recentDefects?: number;
+  email?: string;
 }
 
 export interface KPI {

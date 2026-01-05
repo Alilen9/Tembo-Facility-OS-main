@@ -1,30 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Technician } from '@/types';
 import { TechnicianDetails } from './TechnicianDetails';
-
-const MOCK_TECHNICIANS: Technician[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    skills: ['Plumbing', 'Electrical'],
-    status: 'Available',
-    avatarUrl: 'https://via.placeholder.com/150',
-    phone: '0712345678',
-    auditPassRate: 95,
-    recentDefects: 2
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    skills: ['Carpentry'],
-    status: 'On Job',
-    avatarUrl: 'https://via.placeholder.com/150'
-  }
-];
+import { adminService } from '@/services/adminService';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const TechniciansPage: React.FC = () => {
-  const [technicians, setTechnicians] = useState(MOCK_TECHNICIANS);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [selected, setSelected] = useState<Technician | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    setLoading(true);
+    adminService.getTechnicians(page, 9, searchQuery)
+      .then(data => {
+        setTechnicians(data.technicians || data);
+        setTotalPages(data.totalPages || 1);
+        setLoading(false);
+      });
+  }, [page, searchQuery]);
 
   if (selected) {
     return (
@@ -41,9 +37,29 @@ export const TechniciansPage: React.FC = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p className="text-gray-500">Loading technicians...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-extrabold text-gray-800">Technicians</h1>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <h1 className="text-3xl font-extrabold text-gray-800">Technicians</h1>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input
+            type="text"
+            placeholder="Search by name or skill..."
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); setPage(1); }}
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full md:w-64"
+          />
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {technicians.map(tech => (
           <div
@@ -52,7 +68,7 @@ export const TechniciansPage: React.FC = () => {
             className="cursor-pointer bg-white rounded-2xl shadow-md hover:shadow-xl transition p-6 flex flex-col items-center"
           >
             <img
-              src={tech.avatarUrl}
+              src={(tech as any).profile_photo || tech.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(tech.name)}&background=random`}
               alt={tech.name}
               className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
             />
@@ -91,6 +107,30 @@ export const TechniciansPage: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-6">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="p-2 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <span className="text-sm font-medium text-slate-600">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="p-2 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
+   

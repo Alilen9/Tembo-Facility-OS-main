@@ -22,8 +22,15 @@ export const adminService = {
   },
 
   // Get Technicians for assignment/monitoring
-  getTechnicians: async (): Promise<(User & { status: string })[]> => {
-    const response = await apiClient.get('/admin/technicians');
+  getTechnicians: async (page?: number, limit?: number, search?: string): Promise<any> => {
+    let url = '/admin/technicians';
+    const params = new URLSearchParams();
+    if (page) params.append('page', page.toString());
+    if (limit) params.append('limit', limit.toString());
+    if (search) params.append('search', search);
+    if (params.toString()) url += `?${params.toString()}`;
+    
+    const response = await apiClient.get(url);
     return response.data;
   },
 
