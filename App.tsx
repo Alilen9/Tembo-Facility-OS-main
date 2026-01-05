@@ -32,6 +32,7 @@ import { TechnicianUpgradePage } from './components/ClientUpgradePage';
 import AdminChatPage from './components/admin/AdminChatPage';
 import OpsApartmentsPage from './components/admin/OpsApartmentsPage';
 import { TechniciansPage } from './components/admin/TechniciansPage';
+import TechnicianJobsPage from './components/mobile/TechnicianJobsPage';
 
 
 
@@ -50,7 +51,8 @@ type Tab =
   | 'yield-ledger'
   | 'admin-chat'
   | 'ops-apartments'
-  | 'technicians';
+  | 'technicians'
+  | 'technician-jobs';
   
   
 
@@ -220,6 +222,8 @@ const AuthenticatedApp: React.FC = () => {
          {activeTab === 'technicians' && <TechniciansPage />}
       
         {activeTab === 'admin-chat' && <AdminChatPage />}
+        {activeTab === 'technician-jobs' && <TechnicianJobsPage jobs={[]} />}
+
 
         {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
         {activeTab === 'yield-ledger' && <YieldLedger />}

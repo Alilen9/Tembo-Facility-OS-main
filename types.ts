@@ -73,43 +73,58 @@ export interface Job {
   location: string;
   id: string;
   customerId: string;
+
   category?: string;
   title: string;
   description: string;
+
   status: JobStatus;
   priority: JobPriority;
+
   dateCreated: string;
   scheduledDate?: string;
+  dateCompleted?: string;        // ✅ OPTIONAL
+  clientName?: string;           // ✅ OPTIONAL
+
   technicianId?: string;
   estimatedDurationMinutes?: number;
   slaDeadline?: string;
+
   requiredSkills?: string[];
   requiredTools?: string[];
+
   tasks?: { id: string; label: string; isDone: boolean }[];
+
   price: number;
+
+  images?: string[];
+  rating?: number;
+
   billingStatus: BillingStatus;
   holdReason: HoldReason;
   daysOnHold?: number;
-  
+
   timeline?: TimelineEvent[];
   workSummary?: string;
   materialsUsed?: Material[];
+
   proofImages?: {
     before?: string;
     after?: string;
   };
+
   complianceDocs?: {
     name: string;
     url: string;
     type: 'pdf' | 'img';
     issuedDate?: string;
   }[];
-  
+
   userRating?: number;
   userFeedback?: string;
   techRating?: number;
   techFeedback?: string;
-  
+
   aiAnalysis?: {
     summary: string;
     suggestedPriority: JobPriority;

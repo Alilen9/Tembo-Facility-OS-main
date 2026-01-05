@@ -34,6 +34,7 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({ children, activeTab, o
     { id: 'admin-chat', label: 'Client Chat', icon: MessageSquare, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
     { id: 'ops-apartments', label: 'Apartments', icon: Building2, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
      { id: 'technicians', label: 'Technicians', icon: Users, roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+    { id: 'technician-jobs', label: 'Jobs', icon: Briefcase, roles: [UserRole.TECHNICIAN] },
    
    
 

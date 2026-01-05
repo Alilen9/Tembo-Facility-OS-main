@@ -38,7 +38,12 @@ export type TabKey =
   | 'yield-ledger'
   | 'admin-chat'
   | 'ops-apartments'
-  | 'technicians';
+  | 'technicians'
+  | 'technician-jobs';
+
+/* =======================
+   LAYOUT PROPS
+======================= */
 
 
 
@@ -186,6 +191,12 @@ export const Layout: React.FC<LayoutProps> = ({
                   label="Dispatch Console"
                   active={activeTab === 'admin-dispatch'}
                   onClick={() => onNavigate('admin-dispatch')}
+                />
+                 <SidebarItem
+                  icon={<Briefcase size={18} />}
+                  label="Jobs"
+                  active={activeTab === 'technician-jobs'}
+                  onClick={() => onNavigate('technician-jobs')}
                 />
                 <SidebarItem
                   icon={<UserCheck size={18} />}
