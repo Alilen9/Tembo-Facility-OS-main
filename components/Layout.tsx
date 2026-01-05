@@ -40,10 +40,6 @@ export type TabKey =
   | 'ops-apartments'
   | 'technicians';
 
-
-
-
-
 interface LayoutProps {
   children: React.ReactNode;
   activeTab: TabKey;

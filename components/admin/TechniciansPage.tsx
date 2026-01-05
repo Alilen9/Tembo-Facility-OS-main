@@ -11,14 +11,18 @@ export const TechniciansPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [initialSelectionHandled, setInitialSelectionHandled] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     adminService.getTechnicians(page, 9, searchQuery)
       .then(data => {
-        setTechnicians(data.technicians || data);
+        const loadedTechs = data.technicians || data;
+        setTechnicians(loadedTechs);
         setTotalPages(data.totalPages || 1);
         setLoading(false);
+
+        
       });
   }, [page, searchQuery]);
 

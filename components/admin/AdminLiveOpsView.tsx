@@ -33,7 +33,7 @@ export const AdminLiveOpsView: React.FC<{ onIntervene?: (jobId: string) => void 
            <div><p className="text-[10px] font-bold text-white/50 uppercase tracking-widest leading-none mb-1">Attention Required</p><div className="text-2xl font-bold mt-1">{stats?.slaBreaches || 0} SLA risks</div></div><Clock size={32} className="text-white/20" />
         </div>
         <div className="bg-slate-800 rounded-xl p-5 text-white flex items-center justify-between">
-           <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Field Personnel</p><div className="text-2xl font-bold mt-1">{stats?.activeTechs || 0} Active</div></div><Users size={32} className="text-slate-600" />
+           <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Field Personnel</p><div className="text-2xl font-bold mt-1">{stats?.totalTechs || 0} Active</div></div><Users size={32} className="text-slate-600" />
         </div>
         <div className="bg-blue-600 rounded-xl p-5 text-white flex items-center justify-between shadow-lg shadow-blue-600/20">
            <div><p className="text-[10px] font-bold text-white/50 uppercase tracking-widest leading-none mb-1">Safety Index</p><div className="text-2xl font-bold mt-1">{stats?.safetyIndex || 100}%</div></div><Zap size={32} className="text-white/20" />

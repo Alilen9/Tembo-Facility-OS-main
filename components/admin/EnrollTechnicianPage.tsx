@@ -56,6 +56,7 @@ const INITIAL_FORM_STATE = {
 };
 
 export const EnrollTechnicianPage: React.FC = () => {
+  
   const photoInputRef = useRef<HTMLInputElement>(null);
   const certInputRef = useRef<HTMLInputElement>(null);
   const [certFile, setCertFile] = useState<File | null>(null);
@@ -64,6 +65,7 @@ export const EnrollTechnicianPage: React.FC = () => {
   const [duplicateIdError, setDuplicateIdError] = useState(false);
   const [duplicatePhoneError, setDuplicatePhoneError] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [enrolledTechId, setEnrolledTechId] = useState<string | null>(null);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
 
   useEffect(() => {
@@ -113,7 +115,8 @@ export const EnrollTechnicianPage: React.FC = () => {
         submissionData.append('certUpload', certFile);
       }
 
-      await adminService.enrollTechnician(submissionData);
+      const response = await adminService.enrollTechnician(submissionData);
+      setEnrolledTechId(response.id);
       toast.success('Technician enrolled successfully');
       setStep(10);
     } catch (error) {
@@ -635,7 +638,7 @@ export const EnrollTechnicianPage: React.FC = () => {
               </div>
               <div className="mt-12 flex flex-col md:flex-row gap-4 w-full md:w-auto">
                  <button onClick={() => { setFormData(INITIAL_FORM_STATE); setStep(0); }} className="w-full md:w-auto px-10 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all">Enroll Next Specialist</button>
-                 <button className="w-full md:w-auto px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">Audit Record</button>
+                 <button  className="w-full md:w-auto px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">Audit Record</button>
               </div>
             </div>
           )}
@@ -668,4 +671,4 @@ export const EnrollTechnicianPage: React.FC = () => {
 
     </div>
   );
-}; 
+};    
