@@ -76,7 +76,13 @@ export const JobDetail: React.FC<{ job: Job; onClose: () => void; onUpdateJob: (
           <p className="text-sm text-slate-600 leading-relaxed">{job.description}</p>
         </section>
 
-        {isCompleted ? <CompletedReportView job={job} technician={tech as any} /> : <JobTrackingView job={job} technician={tech as any} />}
+        {isCompleted ? <CompletedReportView 
+                          job={{
+                            ...job, 
+                            userRating: (job as any).userRating, 
+                            userFeedback: (job as any).userFeedback 
+                          }} 
+                          technician={tech as any} /> : <JobTrackingView job={job} technician={tech as any} />}
       </div>
       
       {!isCompleted && (
