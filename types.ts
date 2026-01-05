@@ -133,6 +133,17 @@ export interface Technician {
   auditPassRate?: number;
   recentDefects?: number;
   email?: string;
+   firstName?: string;
+  lastName?: string;
+   nationalId?: string;
+  county?: string;
+  subCounty?: string;
+  initiationMonth?: string;
+  fiscalMonth?: string;
+  licenseId?: string;
+  certificateId?: string;
+  licenseExpiryDate?: string;
+  
 }
 
 export interface KPI {
