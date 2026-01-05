@@ -17,6 +17,7 @@ const TechnicianJobsPage: React.FC = () => {
       try {
         const data = await technicianService.getJobHistory();
         setJobs(data.jobs);
+        console.log("Fetched job history:", data);
       } catch (error) {
         console.error("Failed to fetch jobs", error);
       } finally {
@@ -40,7 +41,7 @@ const TechnicianJobsPage: React.FC = () => {
         const dateB = new Date(b.timeline?.find((e: any) => e.status === 'Job Completed')?.timestamp || 0).getTime();
         return dateB - dateA;
       } else {
-        return (b.userRating || 0) - (a.userRating || 0);
+        return ((b as any).clientRating || b.userRating || 0) - ((a as any).clientRating || a.userRating || 0);
       }
     });
   }, [jobs, sortBy, searchQuery]);
@@ -125,14 +126,14 @@ const TechnicianJobsPage: React.FC = () => {
                   <span className="block text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded mb-1">
                     {job.status}
                   </span>
-                  {job.userRating && job.userRating > 0 && (
+                  {((job as any).clientRating || job.userRating) > 0 && (
                     <div className="flex items-center justify-end gap-0.5">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star 
                           key={star} 
                           size={12} 
-                          fill={(job.userRating || 0) >= star ? "currentColor" : "none"}
-                          className={(job.userRating || 0) >= star ? "text-yellow-400" : "text-slate-200"} 
+                          fill={((job as any).clientRating || job.userRating || 0) >= star ? "currentColor" : "none"}
+                          className={((job as any).clientRating || job.userRating || 0) >= star ? "text-yellow-400" : "text-slate-200"} 
                         />
                       ))}
                     </div>

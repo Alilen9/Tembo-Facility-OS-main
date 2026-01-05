@@ -582,7 +582,6 @@ export const MobileTechApp: React.FC<MobileTechAppProps> = ({ onLogout }) => {
     const fetchJobs = async () => {
       try {
         const data = await technicianService.getMyJobs();
-        console.log("Fetched jobs:", data);
         setJobs(data);
       } catch (error) {
         console.error("Failed to fetch jobs", error);
