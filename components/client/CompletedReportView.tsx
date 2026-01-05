@@ -206,53 +206,74 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
           <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
              <Star size={120} />
           </div>
-          
-          {isTechnician ? (
-            <>
-              <h3 className="text-lg font-bold mb-2 relative z-10">Rate Client Interaction</h3>
-              <p className="text-slate-400 text-sm mb-6 relative z-10">
-                How was your experience working with <span className="text-white font-semibold">{clientName}</span>?
-              </p>
-            </>
+
+          {job.userRating && job.userRating > 0 ? (
+            <div className="relative z-10">
+              <h3 className="text-lg font-bold mb-2">Your Review</h3>
+              <div className="flex justify-center space-x-3 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={36}
+                    className="text-yellow-400"
+                    fill={rating >= star ? "currentColor" : "none"}
+                  />
+                ))}
+              </div>
+              {feedback && (
+                <blockquote className="text-slate-300 italic border-l-2 border-slate-600 pl-4 max-w-md mx-auto">
+                  "{feedback}"
+                </blockquote>
+              )}
+            </div>
           ) : (
             <>
-              <h3 className="text-lg font-bold mb-2 relative z-10">Rate Your Experience</h3>
-              <p className="text-slate-400 text-sm mb-6 relative z-10">
-                How would you rate the service provided by <span className="text-white font-semibold">{technician?.name || 'our technician'}</span>?
-              </p>
+              {isTechnician ? (
+                <>
+                  <h3 className="text-lg font-bold mb-2 relative z-10">Rate Client Interaction</h3>
+                  <p className="text-slate-400 text-sm mb-6 relative z-10">
+                    How was your experience working with <span className="text-white font-semibold">{clientName}</span>?
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold mb-2 relative z-10">Rate Your Experience</h3>
+                  <p className="text-slate-400 text-sm mb-6 relative z-10">
+                    How would you rate the service provided by <span className="text-white font-semibold">{technician?.name || 'our technician'}</span>?
+                  </p>
+                </>
+              )}
+              <div className="flex justify-center space-x-3 mb-6 relative z-10">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setRating(star)}
+                    className={`transition-all duration-200 transform hover:scale-110 ${
+                      rating >= star ? 'text-yellow-400 fill-current' : 'text-slate-700 hover:text-slate-600'
+                    }`}
+                  >
+                    <Star size={36} fill={rating >= star ? "currentColor" : "none"} />
+                  </button>
+                ))}
+              </div>
+              <div className="relative z-10 max-w-md mx-auto">
+                <textarea
+                  placeholder={isTechnician ? "Comments on site access, client behavior, etc..." : "Tell us more about the service (optional)..."}
+                  className="w-full text-sm p-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-slate-500"
+                  rows={3}
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                ></textarea>
+                <button
+                  onClick={handleSubmitReview}
+                  disabled={isSubmitting}
+                  className="mt-4 w-full bg-blue-600 text-white text-sm font-bold py-3 rounded-lg hover:bg-blue-500 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </div>
             </>
           )}
-          
-          <div className="flex justify-center space-x-3 mb-6 relative z-10">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                onClick={() => setRating(star)}
-                className={`transition-all duration-200 transform hover:scale-110 ${
-                  rating >= star ? 'text-yellow-400 fill-current' : 'text-slate-700 hover:text-slate-600'
-                }`}
-              >
-                <Star size={36} fill={rating >= star ? "currentColor" : "none"} />
-              </button>
-            ))}
-          </div>
-          
-          <div className="relative z-10 max-w-md mx-auto">
-             <textarea
-              placeholder={isTechnician ? "Comments on site access, client behavior, etc..." : "Tell us more about the service (optional)..."}
-              className="w-full text-sm p-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-slate-500"
-              rows={3}
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-            ></textarea>
-            <button 
-              onClick={handleSubmitReview}
-              disabled={isSubmitting}
-              className="mt-4 w-full bg-blue-600 text-white text-sm font-bold py-3 rounded-lg hover:bg-blue-500 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? 'Submitting...' : 'Submit Review'}
-            </button>
-          </div>
         </section>
       )}
     </div>
