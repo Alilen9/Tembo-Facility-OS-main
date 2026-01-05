@@ -136,6 +136,10 @@ export const AdminDispatchConsole: React.FC<{
       });
     }
 
+    // Extract completion notes from timeline
+    const completionEvent = reviewJob.timeline?.find((e: any) => e.status === 'Job Completed');
+    const workNotes = completionEvent?.note;
+
     const technician = technicians.find(t => t.id === reviewJob.technicianId);
 
     return (
@@ -149,7 +153,7 @@ export const AdminDispatchConsole: React.FC<{
             : 'Pending Completion',
           technicianName: technician?.name || 'Unassigned',
           clientName: (reviewJob as any).customerName || 'Unknown Client',
-          workSummary: reviewJob.description || 'No summary available.',
+          workSummary: workNotes || reviewJob.description || 'No summary available.',
           proofImages: (proofImages.before || proofImages.after) ? proofImages : undefined,
           materialsUsed: [], // Not available in dispatch view data
           complianceDocs: [],
