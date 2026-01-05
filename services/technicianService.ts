@@ -7,6 +7,11 @@ export const technicianService = {
     return response.data;
   },
 
+  getJobHistory: async (page = 1, limit = 20): Promise<{ jobs: Job[], total: number, page: number, totalPages: number }> => {
+    const response = await apiClient.get(`/technician/history?page=${page}&limit=${limit}`);
+    return response.data;
+  },
+
   getAvailableJobs: async (): Promise<Job[]> => {
     const response = await apiClient.get('/technician/available-jobs');
     return response.data;
@@ -20,15 +25,24 @@ export const technicianService = {
   updateJobProgress: async (
     jobId: string, 
     status: JobStatus, 
-    timelineEvent: { status: string; note?: string; isCompleted?: boolean }
+    timelineEvent: { status: string; note?: string; isCompleted?: boolean },
+    techRating?: number,
+    techFeedback?: string
   ) => {
     const response = await apiClient.put(`/technician/jobs/${jobId}/update`, {
       status,
       timelineEvent: {
         ...timelineEvent,
         isCompleted: true
-      }
+      },
+      techRating,
+      techFeedback
     });
+    return response.data;
+  },
+
+  rateClient: async (jobId: string, rating: number, feedback: string) => {
+    const response = await apiClient.post(`/technician/jobs/${jobId}/rate-client`, { rating, feedback });
     return response.data;
   }
   , // Add this to your technicianService object

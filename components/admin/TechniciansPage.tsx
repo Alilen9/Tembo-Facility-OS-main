@@ -17,7 +17,9 @@ export const TechniciansPage: React.FC = () => {
     setLoading(true);
     adminService.getTechnicians(page, 9, searchQuery)
       .then(data => {
+        
         const loadedTechs = data.technicians || data;
+        console.log("Loaded technicians:", loadedTechs);
         setTechnicians(loadedTechs);
         setTotalPages(data.totalPages || 1);
         setLoading(false);

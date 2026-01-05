@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Job, JobPriority, JobStatus, User } from '../../types';
 import { adminService } from '../../services/adminService';
 import { toast } from 'react-hot-toast';
-import { Clock, Search, MoreHorizontal, AlertTriangle, Zap, Thermometer, Droplets, Hammer, Shield, SprayCan, ArrowRight, UserCheck, Bell, MapPin, Camera, MessageSquare, Activity, List, ChevronRight } from '../Icons';
+import { Clock, Search, MoreHorizontal, AlertTriangle, Zap, Thermometer, Droplets, Hammer, Shield, SprayCan, ArrowRight, UserCheck, Bell, MapPin, Camera, MessageSquare, Activity, List, ChevronRight, Star } from '../Icons';
 import RequestDetailsPage from './RequestDetailsPage';
 import AdminReviewPage from './AdminReviewPage';
 
@@ -204,7 +204,15 @@ export const AdminDispatchConsole: React.FC<{
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-slate-100 rounded text-slate-500">{getCategoryIcon(job.category)}</div>
                         <div>
-                          <p className="text-sm font-bold text-slate-900">{job.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold text-slate-900">{job.title}</p>
+                            {job.userRating && job.userRating > 0 && (
+                              <div className="flex items-center gap-0.5 bg-yellow-50 px-1.5 py-0.5 rounded border border-yellow-100">
+                                <Star size={10} className="text-yellow-500 fill-current" />
+                                <span className="text-[10px] font-bold text-yellow-700">{job.userRating}</span>
+                              </div>
+                            )}
+                          </div>
                           <p className="text-xs text-slate-400">#{job.id} • {(job as any).customerName || 'Client'}</p>
                         </div>
                       </div>
@@ -268,7 +276,15 @@ export const AdminDispatchConsole: React.FC<{
                   <div className="flex items-start gap-3 mb-3">
                     <div className="p-2 bg-slate-100 rounded text-slate-500 shrink-0 mt-0.5">{getCategoryIcon(job.category)}</div>
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900 leading-tight">{job.title}</h4>
+                      <h4 className="text-sm font-bold text-slate-900 leading-tight flex items-center gap-2">
+                        {job.title}
+                        {job.userRating && job.userRating > 0 && (
+                          <span className="flex items-center gap-0.5 bg-yellow-50 px-1.5 py-0.5 rounded border border-yellow-100">
+                            <Star size={10} className="text-yellow-500 fill-current" />
+                            <span className="text-[10px] font-bold text-yellow-700">{job.userRating}</span>
+                          </span>
+                        )}
+                      </h4>
                       <p className="text-xs text-slate-400 mt-0.5">{(job as any).customerName || 'Client'}</p>
                     </div>
                   </div>

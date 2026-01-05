@@ -1,5 +1,6 @@
 import React from 'react';
 import { Technician } from '@/types';
+import { ExternalLink } from 'lucide-react';
 
 interface TechnicianDetailsProps {
   technician: Technician;
@@ -11,6 +12,9 @@ export const TechnicianDetails: React.FC<TechnicianDetailsProps> = ({
   technician,
   onBack,
 }) => {
+  const rawCertDoc = (technician as any).certificationDoc || (technician as any).certification_doc;
+  const certDocUrl = rawCertDoc && !rawCertDoc.startsWith('http') && !rawCertDoc.startsWith('/') && !rawCertDoc.startsWith('data:') ? `https://${rawCertDoc}` : rawCertDoc;
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <button
@@ -51,22 +55,22 @@ export const TechnicianDetails: React.FC<TechnicianDetailsProps> = ({
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
     <div>
       <p className="text-sm text-gray-500">First Name</p>
-      <p className="font-semibold">{technician.firstName || 'N/A'}</p>
+      <p className="font-semibold">{(technician as any).firstName || technician.name.split(' ')[0]}</p>
     </div>
 
     <div>
       <p className="text-sm text-gray-500">Last Name</p>
-      <p className="font-semibold">{technician.lastName || 'N/A'}</p>
+      <p className="font-semibold">{(technician as any).lastName || technician.name.split(' ').slice(1).join(' ')}</p>
     </div>
 
     <div>
       <p className="text-sm text-gray-500">National ID</p>
-      <p className="font-semibold">{technician.nationalId || 'N/A'}</p>
+      <p className="font-semibold">{(technician as any).nationalId || (technician as any).national_id || 'N/A'}</p>
     </div>
 
     <div>
       <p className="text-sm text-gray-500">Phone</p>
-      <p className="font-semibold">{technician.phone || 'N/A'}</p>
+      <p className="font-semibold">{(technician as any).phone || 'N/A'}</p>
     </div>
 
     <div>
@@ -76,36 +80,42 @@ export const TechnicianDetails: React.FC<TechnicianDetailsProps> = ({
 
     <div>
       <p className="text-sm text-gray-500">County</p>
-      <p className="font-semibold">{technician.county || 'N/A'}</p>
+      <p className="font-semibold">{(technician as any).county || (technician as any).zone || 'N/A'}</p>
     </div>
 
     <div>
       <p className="text-sm text-gray-500">Sub-county</p>
-      <p className="font-semibold">{technician.subCounty || 'N/A'}</p>
+      <p className="font-semibold">{(technician as any).subCounty || (technician as any).sub_zone || 'N/A'}</p>
     </div>
 
     <div>
-      <p className="text-sm text-gray-500">Initiation Month</p>
-      <p className="font-semibold">{technician.initiationMonth || 'N/A'}</p>
+      <p className="text-sm text-gray-500">Joined Date</p>
+      <p className="font-semibold">{(technician as any).joinedDate || (technician as any).date_created ? new Date((technician as any).joinedDate || (technician as any).date_created).toLocaleDateString() : 'N/A'}</p>
     </div>
 
     <div>
-      <p className="text-sm text-gray-500">Fiscal Month</p>
-      <p className="font-semibold">{technician.fiscalMonth || 'N/A'}</p>
+      <p className="text-sm text-gray-500">Certification Document</p>
+      {certDocUrl ? (
+        <a href={certDocUrl} target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline flex items-center gap-1">
+          View Document <ExternalLink size={14} />
+        </a>
+      ) : (
+        <p className="font-semibold text-slate-400">Not Available</p>
+      )}
     </div>
 
     <div>
       <p className="text-sm text-gray-500">Licence / Certificate ID</p>
       <p className="font-semibold">
-        {technician.licenseId || technician.certificateId || 'N/A'}
+        {(technician as any).licenseId || (technician as any).certificateId || (technician as any).certification_id || 'N/A'}
       </p>
     </div>
 
     <div>
       <p className="text-sm text-gray-500">Licence Expiry Date</p>
       <p className="font-semibold">
-        {technician.licenseExpiryDate
-          ? new Date(technician.licenseExpiryDate).toLocaleDateString()
+        {(technician as any).licenseExpiryDate || (technician as any).certification_expiry
+          ? new Date((technician as any).licenseExpiryDate || (technician as any).certification_expiry).toLocaleDateString()
           : 'N/A'}
       </p>
     </div>

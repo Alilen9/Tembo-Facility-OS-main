@@ -3,27 +3,37 @@ import { Job, Technician, UserRole } from '../../types';
 import { Star, Download, FileText, CheckCircle2, Wrench, Package, Shield, ClipboardList, Camera } from '../Icons';
 import { useAuth } from '../AuthContext';
 import { clientService } from '../../services/clientService';
+import { technicianService } from '../../services/technicianService';
 import toast from 'react-hot-toast';
 
 interface CompletedReportViewProps {
   job: Job;
   technician?: Technician;
+  proofImages?: { before: string; after: string };
 }
 
-export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, technician }) => {
+export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, technician, proofImages: providedProofImages }) => {
   const { user } = useAuth();
-  const [rating, setRating] = useState(job.userRating || 0);
-  const [feedback, setFeedback] = useState(user?.role === UserRole.TECHNICIAN ? (job as any).techFeedback || '' : (job as any).userFeedback || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const isTechnician = user?.role === UserRole.TECHNICIAN;
   const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
+  
+  // Determine which rating to display/edit based on role
+  const initialRating = isTechnician ? (job as any).clientRating : job.userRating;
+  const initialFeedback = isTechnician ? (job as any).clientFeedback : (job as any).userFeedback;
+
+  const [rating, setRating] = useState(initialRating || 0);
+  const [feedback, setFeedback] = useState(initialFeedback || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(!!initialRating && initialRating > 0);
+
   const clientName = (job as any).customerName || "the client";
 
   console.log('Rendering CompletedReportView for job:', job);
 
   // Extract before/after images from the timeline
   const proofImages = React.useMemo(() => {
+    if (providedProofImages) return providedProofImages;
+
     const images: { before?: string; after?: string } = {};
     if (job.timeline && Array.isArray(job.timeline)) {
       job.timeline.forEach((event: any) => {
@@ -36,7 +46,7 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
       });
     }
     return images;
-  }, [job.timeline]);
+  }, [job.timeline, providedProofImages]);
 
   // Extract completion notes from the timeline
   const workNotes = React.useMemo(() => {
@@ -47,6 +57,13 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
     return null;
   }, [job.timeline]);
 
+  // Helper to ensure image URLs are valid (handle relative paths)
+  const getImageUrl = (url?: string) => {
+    if (!url) return undefined;
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    return `http://localhost:5000/${url.replace(/^\//, '')}`; // Fallback for dev
+  };
+
   const handleSubmitReview = async () => {
     if (rating === 0) {
       toast.error('Please select a rating');
@@ -55,8 +72,13 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
 
     setIsSubmitting(true);
     try {
-      await clientService.submitJobRating(job.id, rating, feedback);
+      if (isTechnician) {
+        await technicianService.rateClient(job.id, rating, feedback);
+      } else {
+        await clientService.submitJobRating(job.id, rating, feedback);
+      }
       toast.success('Review submitted successfully');
+      setHasSubmitted(true);
     } catch (error) {
       console.error(error);
       toast.error('Failed to submit review');
@@ -116,7 +138,7 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
             <div className="space-y-2">
               <span className="text-xs font-bold text-slate-500 pl-1 uppercase">Before</span>
               <div className="aspect-video rounded-xl bg-slate-100 border border-slate-200 overflow-hidden relative group shadow-sm">
-                {proofImages.before ? <img src={proofImages.before} alt="Before" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400 italic">Not provided</div>}
+                {proofImages.before ? <img src={getImageUrl(proofImages.before)} alt="Before" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400 italic">Not provided</div>}
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                    <button className="text-white text-xs font-bold border border-white px-3 py-1.5 rounded hover:bg-white/20">Expand</button>
                 </div>
@@ -125,7 +147,7 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
             <div className="space-y-2">
               <span className="text-xs font-bold text-slate-500 pl-1 uppercase">After</span>
               <div className="aspect-video rounded-xl bg-slate-100 border border-slate-200 overflow-hidden relative group shadow-sm">
-                {proofImages.after ? <img src={proofImages.after} alt="After" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400 italic">Not provided</div>}
+                {proofImages.after ? <img src={getImageUrl(proofImages.after)} alt="After" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400 italic">Not provided</div>}
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                    <button className="text-white text-xs font-bold border border-white px-3 py-1.5 rounded hover:bg-white/20">Expand</button>
                 </div>
@@ -216,7 +238,7 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
              <Star size={120} />
           </div>
 
-          {job.userRating && job.userRating > 0 ? (
+          {hasSubmitted ? (
             <div className="relative z-10">
               <h3 className="text-lg font-bold mb-2">Your Review</h3>
               <div className="flex justify-center space-x-3 mb-4">

@@ -448,15 +448,25 @@ const WorkExecutionScreen: React.FC<{ job: Job; onComplete: () => void }> = ({ j
 };
 
 // 2.5 Screen 6: Completion
-const CompletionScreen: React.FC<{ onSubmit: () => Promise<void> | void }> = ({ onSubmit }) => {
+const CompletionScreen: React.FC<{ onSubmit: (notes: string, rating: number, feedback: string) => Promise<void> | void }> = ({ onSubmit }) => {
   const [techRating, setTechRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [clientFeedback, setClientFeedback] = useState('');
 
   const handleSubmitClick = async () => {
     if (isSubmitting) return;
+    if (!notes.trim()) {
+      toast.error("Please enter completion notes");
+      return;
+    }
+    if (techRating === 0) {
+      toast.error("Please rate the client interaction");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await onSubmit();
+      await onSubmit(notes, techRating, clientFeedback);
     } finally {
       setIsSubmitting(false);
     }
@@ -469,7 +479,12 @@ const CompletionScreen: React.FC<{ onSubmit: () => Promise<void> | void }> = ({ 
       <div className="flex-1 overflow-y-auto p-5 space-y-6">
          <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Technician Notes <span className="text-red-500">*</span></label>
-            <textarea className="w-full h-32 p-4 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Describe work performed, parts used..."></textarea>
+            <textarea 
+              className="w-full h-32 p-4 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+              placeholder="Describe work performed, parts used..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            ></textarea>
          </div>
 
          {/* Rate Client Interaction */}
@@ -493,6 +508,8 @@ const CompletionScreen: React.FC<{ onSubmit: () => Promise<void> | void }> = ({ 
             <textarea 
               className="w-full h-20 p-3 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500" 
               placeholder="Comments on client behavior (optional)..."
+              value={clientFeedback}
+              onChange={(e) => setClientFeedback(e.target.value)}
             ></textarea>
          </div>
 
@@ -657,12 +674,12 @@ export const MobileTechApp: React.FC<MobileTechAppProps> = ({ onLogout }) => {
     }
   };
   
-  const handleSubmit = async () => {
+  const handleSubmit = async (notes: string, rating: number, feedback: string) => {
     if (activeJob) {
       await technicianService.updateJobProgress(activeJob.id, JobStatus.COMPLETED, {
         status: 'Job Completed',
-        note: 'Work finished and verified by technician'
-      });
+        note: notes
+      }, rating, feedback);
       toast.success('Job completed successfully');
       setState('LOCKED');
     }

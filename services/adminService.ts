@@ -43,7 +43,11 @@ export const adminService = {
 
   // Enroll a new technician
   enrollTechnician: async (data: any) => {
-    const response = await apiClient.post('/admin/technicians', data);
+    const response = await apiClient.post('/admin/technicians', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
     return response.data;
   },
 

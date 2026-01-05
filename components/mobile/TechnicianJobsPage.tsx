@@ -15,8 +15,8 @@ const TechnicianJobsPage: React.FC = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const data = await technicianService.getMyJobs();
-        setJobs(data.filter(j => j.status === 'COMPLETED'));
+        const data = await technicianService.getJobHistory();
+        setJobs(data.jobs);
       } catch (error) {
         console.error("Failed to fetch jobs", error);
       } finally {
@@ -51,12 +51,21 @@ const TechnicianJobsPage: React.FC = () => {
 
   // 👉 If a job is selected → show details
   if (selectedJob) {
+    // Extract images from timeline (copied from AdminDispatchConsole)
+    const proofImages: { before: string; after: string } = { before: '', after: '' };
+    if (selectedJob.timeline && Array.isArray(selectedJob.timeline)) {
+      selectedJob.timeline.forEach((event: any) => {
+        if (event.evidenceType === 'BEFORE' && event.evidenceUrl) proofImages.before = event.evidenceUrl;
+        if (event.evidenceType === 'AFTER' && event.evidenceUrl) proofImages.after = event.evidenceUrl;
+      });
+    }
+
     return (
       <div className="bg-gray-50 min-h-screen pb-10">
         <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-20">
           <button onClick={() => setSelectedJob(null)} className="flex items-center gap-2 text-slate-600 font-bold text-sm"><ArrowLeft size={18} /> Back to Jobs</button>
         </div>
-        <div className="p-4"><CompletedReportView job={selectedJob} /></div>
+        <div className="p-4"><CompletedReportView job={selectedJob} proofImages={proofImages} /></div>
       </div>
     );
   }
@@ -117,9 +126,15 @@ const TechnicianJobsPage: React.FC = () => {
                     {job.status}
                   </span>
                   {job.userRating && job.userRating > 0 && (
-                    <div className="flex items-center justify-end gap-1 text-yellow-500">
-                      <span className="text-xs font-bold">{job.userRating}</span>
-                      <Star size={12} fill="currentColor" />
+                    <div className="flex items-center justify-end gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star 
+                          key={star} 
+                          size={12} 
+                          fill={(job.userRating || 0) >= star ? "currentColor" : "none"}
+                          className={(job.userRating || 0) >= star ? "text-yellow-400" : "text-slate-200"} 
+                        />
+                      ))}
                     </div>
                   )}
                 </div>
