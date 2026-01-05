@@ -51,6 +51,7 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({ job, technicia
   const [chatInput, setChatInput] = useState('');
   const [showFullLog, setShowFullLog] = useState(false);
   const [isResolved, setIsResolved] = useState(false);
+  const [activeTicket, setActiveTicket] = useState<{id: string} | null>(null);
 
   // Poll for new messages (Admin replies)
   useEffect(() => {
@@ -65,6 +66,7 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({ job, technicia
             new Date(current.created_at).getTime() > new Date(prev.created_at).getTime() ? current : prev
           );
           setIsResolved(latestTicket.status === 'RESOLVED');
+          setActiveTicket(latestTicket.status !== 'RESOLVED' ? latestTicket : null);
         }
         
         // Transform tickets/alerts into flat chat history
@@ -107,7 +109,7 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({ job, technicia
   }, [job.id]);
 
   const handleSend = async () => {
-    if(!chatInput.trim() || isResolved) return;
+    if(!chatInput.trim() || isResolved || activeTicket) return;
     
     const messageContent = chatInput;
     setMessages([...messages, {
@@ -125,8 +127,12 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({ job, technicia
         type: 'INQUIRY',
         jobId: job.id
       });
-    } catch (error) {
-      toast.error('Failed to send message');
+    } catch (error: any) {
+      if (error.response?.data?.message === 'An active ticket already exists for this job. Please reply to the existing ticket.') {
+        toast.error('An active ticket exists. Please wait for it to be resolved.');
+      } else {
+        toast.error('Failed to send message');
+      }
     }
   };
 
@@ -193,17 +199,23 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({ job, technicia
                   This ticket has been marked as resolved.
                </div>
             )}
+            {activeTicket && (
+               <div className="bg-blue-50 border-y border-blue-100 p-2 flex items-center justify-center gap-2 text-blue-700 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
+                  <Clock size={14} />
+                  Ticket #{activeTicket.id} is active. Please wait for resolution.
+               </div>
+            )}
             <div className="p-2 border-t border-slate-100 bg-slate-50 flex gap-2">
                <input 
                  type="text" 
                  value={chatInput}
                  onChange={(e) => setChatInput(e.target.value)}
-                 onKeyDown={(e) => e.key === 'Enter' && !isResolved && handleSend()}
-                 placeholder={isResolved ? "Ticket Resolved" : "Message dispatch..."}
+                 onKeyDown={(e) => e.key === 'Enter' && !isResolved && !activeTicket && handleSend()}
+                 placeholder={isResolved ? "Ticket Resolved" : activeTicket ? "Ticket Active - Please wait" : "Message dispatch..."}
                  className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-slate-50 disabled:text-slate-500"
-                 disabled={isResolved}
+                 disabled={isResolved || !!activeTicket}
                />
-               <button onClick={handleSend} disabled={isResolved} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 shadow-md disabled:bg-slate-300 disabled:cursor-not-allowed"><Send size={16} /></button>
+               <button onClick={handleSend} disabled={isResolved || !!activeTicket} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 shadow-md disabled:bg-slate-300 disabled:cursor-not-allowed"><Send size={16} /></button>
             </div>
          </div>
       </section>

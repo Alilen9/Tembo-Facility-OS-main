@@ -38,6 +38,15 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
     return images;
   }, [job.timeline]);
 
+  // Extract completion notes from the timeline
+  const workNotes = React.useMemo(() => {
+    if (job.timeline && Array.isArray(job.timeline)) {
+      const completionEvent = job.timeline.find((event: any) => event.status === 'Job Completed');
+      return completionEvent?.note;
+    }
+    return null;
+  }, [job.timeline]);
+
   const handleSubmitReview = async () => {
     if (rating === 0) {
       toast.error('Please select a rating');
@@ -91,7 +100,7 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <p className="text-sm text-slate-700 leading-7">
-            {job.workSummary || "Technician has not provided a detailed summary for this job."}
+            {workNotes || job.workSummary || "Technician has not provided a detailed summary for this job."}
           </p>
         </div>
       </section>

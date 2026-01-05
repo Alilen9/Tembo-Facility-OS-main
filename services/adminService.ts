@@ -4,6 +4,7 @@ import { Job, User } from '../types';
 export interface AdminDashboardStats {
   slaBreaches: number;
   activeTechs: number;
+  totalTechs: number;
   liveOpsStatus: 'Optimal' | 'Warning' | 'Critical';
   safetyIndex: number;
 }

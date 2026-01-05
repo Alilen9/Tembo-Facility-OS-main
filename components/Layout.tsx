@@ -45,10 +45,6 @@ export type TabKey =
    LAYOUT PROPS
 ======================= */
 
-
-
-
-
 interface LayoutProps {
   children: React.ReactNode;
   activeTab: TabKey;
