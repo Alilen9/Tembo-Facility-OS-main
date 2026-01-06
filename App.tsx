@@ -222,7 +222,7 @@ const AuthenticatedApp: React.FC = () => {
          {activeTab === 'technicians' && <TechniciansPage />}
       
         {activeTab === 'admin-chat' && <AdminChatPage />}
-        {activeTab === 'technician-jobs' && <TechnicianJobsPage jobs={[]} />}
+        {activeTab === 'technician-jobs' && <TechnicianJobsPage  />}
 
 
         {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
