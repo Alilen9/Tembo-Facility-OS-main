@@ -32,7 +32,6 @@ import { TechnicianUpgradePage } from './components/ClientUpgradePage';
 import AdminChatPage from './components/admin/AdminChatPage';
 import OpsApartmentsPage from './components/admin/OpsApartmentsPage';
 import { TechniciansPage } from './components/admin/TechniciansPage';
-import TechnicianJobsPage from './components/mobile/TechnicianJobsPage';
 
 
 
@@ -51,8 +50,7 @@ type Tab =
   | 'yield-ledger'
   | 'admin-chat'
   | 'ops-apartments'
-  | 'technicians'
-  | 'technician-jobs';
+  | 'technicians';
   
   
 
@@ -218,12 +216,10 @@ const AuthenticatedApp: React.FC = () => {
 
         {activeTab === 'quality-control' && <QualityControlView />}
 
-        {activeTab === 'enroll-technician' && <EnrollTechnicianPage />}
+        {activeTab === 'enroll-technician' && <EnrollTechnicianPage onNavigate={(tab) => handleNavigate(tab as Tab)} />}
          {activeTab === 'technicians' && <TechniciansPage />}
       
         {activeTab === 'admin-chat' && <AdminChatPage />}
-        {activeTab === 'technician-jobs' && <TechnicianJobsPage jobs={[]} />}
-
 
         {activeTab === 'technician-upgrades' && <TechnicianUpgradePage />}
         {activeTab === 'yield-ledger' && <YieldLedger />}
@@ -279,4 +275,3 @@ const App: React.FC = () => (
 );
 
 export default App;
-

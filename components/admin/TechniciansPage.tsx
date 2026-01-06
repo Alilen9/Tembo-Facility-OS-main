@@ -4,7 +4,11 @@ import { TechnicianDetails } from './TechnicianDetails';
 import { adminService } from '@/services/adminService';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
-export const TechniciansPage: React.FC = () => {
+interface TechniciansPageProps {
+  initialSelectedTechId?: string;
+}
+
+export const TechniciansPage: React.FC<TechniciansPageProps> = ({ initialSelectedTechId }) => {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [selected, setSelected] = useState<Technician | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +28,23 @@ export const TechniciansPage: React.FC = () => {
         setTotalPages(data.totalPages || 1);
         setLoading(false);
 
-        
+        if (!initialSelectionHandled) {
+          let targetId = initialSelectedTechId;
+
+          // Fallback: Check URL parameters if prop is missing
+          if (!targetId) {
+            const params = new URLSearchParams(window.location.search);
+            targetId = params.get('selectedTechId') || undefined;
+          }
+
+          if (targetId) {
+            const found = loadedTechs.find((t: any) => String(t.id) === String(targetId));
+            if (found) {
+              setSelected(found);
+            }
+          }
+          setInitialSelectionHandled(true);
+        }
       });
   }, [page, searchQuery]);
 

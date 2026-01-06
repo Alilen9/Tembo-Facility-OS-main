@@ -337,21 +337,21 @@ export const QualityControlView: React.FC = () => {
   {/* Rating */}
   <div className="flex items-center gap-3 mb-3">
     <span className="text-sm font-bold text-slate-600">Client Rating</span>
-    {selectedJob.techRating ? (
+    {(selectedJob as any).clientRating ? (
       <div className="flex items-center gap-1">
         {[1, 2, 3, 4, 5].map(i => (
           <Star
             key={i}
             size={16}
             className={
-              i <= selectedJob.techRating
+              i <= ((selectedJob as any).clientRating || 0)
                 ? 'text-yellow-400 fill-yellow-400'
                 : 'text-slate-300'
             }
           />
         ))}
         <span className="text-xs font-bold text-slate-500 ml-2">
-          {selectedJob.techRating}/5
+          {(selectedJob as any).clientRating}/5
         </span>
       </div>
     ) : (
@@ -363,8 +363,8 @@ export const QualityControlView: React.FC = () => {
 
   {/* Feedback Text */}
   <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 leading-relaxed">
-    {selectedJob.techFeedback ? (
-      selectedJob.techFeedback
+    {(selectedJob as any).clientFeedback ? (
+      (selectedJob as any).clientFeedback
     ) : (
       <span className="italic text-slate-400">
         No written feedback provided by technician.
@@ -373,7 +373,7 @@ export const QualityControlView: React.FC = () => {
   </div>
 
   {/* Audit Insight */}
-  {selectedJob.techRating && selectedJob.techRating <= 2 && (
+  {(selectedJob as any).clientRating && (selectedJob as any).clientRating <= 2 && (
     <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-xs font-medium">
       <AlertTriangle size={16} className="mt-0.5" />
       <span>

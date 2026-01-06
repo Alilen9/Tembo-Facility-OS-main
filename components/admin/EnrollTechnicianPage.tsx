@@ -55,7 +55,12 @@ const INITIAL_FORM_STATE = {
   subZone: '' ,
 };
 
-export const EnrollTechnicianPage: React.FC = () => {
+interface EnrollTechnicianPageProps {
+  onAuditClick?: (techId: string | null) => void;
+  onNavigate?: (tab: string) => void;
+}
+
+export const EnrollTechnicianPage: React.FC<EnrollTechnicianPageProps> = ({ onAuditClick, onNavigate }) => {
   
   const photoInputRef = useRef<HTMLInputElement>(null);
   const certInputRef = useRef<HTMLInputElement>(null);
@@ -638,7 +643,17 @@ export const EnrollTechnicianPage: React.FC = () => {
               </div>
               <div className="mt-12 flex flex-col md:flex-row gap-4 w-full md:w-auto">
                  <button onClick={() => { setFormData(INITIAL_FORM_STATE); setStep(0); }} className="w-full md:w-auto px-10 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all">Enroll Next Specialist</button>
-                 <button  className="w-full md:w-auto px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">Audit Record</button>
+                 <button onClick={() => {
+                   if (onAuditClick) {
+                     onAuditClick(enrolledTechId);
+                } else if (onNavigate && enrolledTechId) {
+                  const newUrl = `?selectedTechId=${enrolledTechId}`;
+                  window.history.pushState({ path: newUrl }, '', newUrl);
+                  onNavigate('technicians');
+                   } else if (enrolledTechId) {
+                     window.location.href = `/admin/technicians?selectedTechId=${enrolledTechId}`;
+                   }
+                 }} className="w-full md:w-auto px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">Audit Record</button>
               </div>
             </div>
           )}
@@ -671,4 +686,4 @@ export const EnrollTechnicianPage: React.FC = () => {
 
     </div>
   );
-};    
+};           

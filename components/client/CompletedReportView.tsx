@@ -30,6 +30,15 @@ export const CompletedReportView: React.FC<CompletedReportViewProps> = ({ job, t
 
   console.log('Rendering CompletedReportView for job:', job);
 
+  // Update local state when the job prop changes
+  React.useEffect(() => {
+    const currentRating = isTechnician ? (job as any).clientRating : job.userRating;
+    const currentFeedback = isTechnician ? (job as any).clientFeedback : (job as any).userFeedback;
+    setRating(currentRating || 0);
+    setFeedback(currentFeedback || '');
+    setHasSubmitted(!!currentRating && currentRating > 0);
+  }, [job, isTechnician]);
+
   // Extract before/after images from the timeline
   const proofImages = React.useMemo(() => {
     if (providedProofImages) return providedProofImages;
